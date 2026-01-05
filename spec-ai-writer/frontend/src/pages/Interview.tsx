@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Send, ArrowLeft, Loader2 } from 'lucide-react';
 import { useInterviewStore } from '@/store/useInterviewStore';
@@ -13,59 +13,19 @@ export default function Interview() {
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const {
-    messages,
-    currentPhase,
-    phaseName,
-    isWaitingForResponse,
-    addMessage,
-    setCurrentPhase,
-    setProjectName,
-    setInterviewActive,
-    setWaitingForResponse,
-  } = useInterviewStore();
+  const messages = useInterviewStore((state) => state.messages);
+  const currentPhase = useInterviewStore((state) => state.currentPhase);
+  const phaseName = useInterviewStore((state) => state.phaseName);
+  const isWaitingForResponse = useInterviewStore(
+    (state) => state.isWaitingForResponse
+  );
+  const setProjectName = useInterviewStore((state) => state.setProjectName);
+  const setInterviewActive = useInterviewStore((state) => state.setInterviewActive);
 
-  useEffect(() => {
-    if (!projectName) return;
-
-    setProjectName(projectName);
-
-    // Initialize WebSocket
-    const websocket = new WebSocketManager(projectName);
-    setWs(websocket);
-
-    websocket
-      .connect()
-      .then(() => {
-        setIsConnecting(false);
-        setInterviewActive(true);
-      })
-      .catch((err) => {
-        console.error('Failed to connect:', err);
-        setError('WebSocket接続に失敗しました');
-        setIsConnecting(false);
-      });
-
-    // Handle incoming messages
-    const unsubscribe = websocket.onMessage((message: WebSocketMessage) => {
-      handleWebSocketMessage(message);
-    });
-
-    // Cleanup
-    return () => {
-      unsubscribe();
-      websocket.disconnect();
-      setInterviewActive(false);
-    };
-  }, [projectName]);
-
-  useEffect(() => {
-    // Auto-scroll to bottom
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const handleWebSocketMessage = (message: WebSocketMessage) => {
+  const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
     console.log('Received message:', message);
+    const { addMessage, setCurrentPhase, setInterviewActive, setWaitingForResponse } =
+      useInterviewStore.getState();
 
     switch (message.type) {
       case 'question':
@@ -120,8 +80,54 @@ export default function Interview() {
         });
         setWaitingForResponse(false);
         break;
+
+      default:
+        addMessage({
+          role: 'system',
+          content: `⚠️ 未対応のメッセージ: ${message.type}`,
+          timestamp: new Date().toISOString(),
+        });
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!projectName) return;
+
+    setProjectName(projectName);
+
+    // Initialize WebSocket
+    const websocket = new WebSocketManager(projectName);
+    setWs(websocket);
+
+    websocket
+      .connect()
+      .then(() => {
+        setIsConnecting(false);
+        setInterviewActive(true);
+      })
+      .catch((err) => {
+        console.error('Failed to connect:', err);
+        setError('WebSocket接続に失敗しました');
+        setIsConnecting(false);
+      });
+
+    // Handle incoming messages
+    const unsubscribe = websocket.onMessage((message: WebSocketMessage) => {
+      handleWebSocketMessage(message);
+    });
+
+    // Cleanup
+    return () => {
+      unsubscribe();
+      websocket.disconnect();
+      setInterviewActive(false);
+    };
+  }, [handleWebSocketMessage, projectName, setInterviewActive, setProjectName]);
+
+  useEffect(() => {
+    // Auto-scroll to bottom
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +141,7 @@ export default function Interview() {
       timestamp: new Date().toISOString(),
     };
 
-    addMessage(userMessage);
+    useInterviewStore.getState().addMessage(userMessage);
 
     // Send to WebSocket
     ws.sendAnswer(input.trim());
