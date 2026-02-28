@@ -1,3 +1,8 @@
+> [!NOTE]
+> **Issue・Pull Request について**
+> 本リポジトリの [Issues](https://github.com/elvezjp/SDD/issues) や [Pull Requests](https://github.com/elvezjp/SDD/pulls) には、セキュリティ評価や改善提案がそのまま公開されています。
+> これらは練習用リポジトリの一部として、実際の開発現場での Issue 管理や PR レビューの参考例としてご活用ください。
+
 # SDD（仕様駆動開発） 練習用リポジトリ
 
 [English](./README.md) | [日本語](./README_ja.md)
@@ -13,6 +18,7 @@
 リポジトリ名の「SDD」は「Spec-Driven Development（仕様駆動開発）」の略称です。このリモートリポジトリには、書籍で記載されている「仕様駆動開発の4つの原則と7つの工程」に沿ったサンプルファイルが含まれており、**実際のプロジェクトでどのようにリポジトリを構成するかの参考**になります。
 
 > 本書をお読みの方へ：書籍の誤植・修正事項は[正誤表](./docs/guides/errata.md)をご確認ください。
+
 
 ## このリポジトリの目的
 

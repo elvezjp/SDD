@@ -4,6 +4,11 @@
 > 日本語の README は [README_ja.md](./README_ja.md) をご覧ください。
 > **書籍の正誤表は[こちら](./docs/guides/errata.md)です。**
 
+> [!NOTE]
+> **Issue・Pull Request について**
+> 本リポジトリの [Issues](https://github.com/elvezjp/SDD/issues) や [Pull Requests](https://github.com/elvezjp/SDD/pulls) には、セキュリティ評価や改善提案がそのまま公開されています。
+> これらは練習用リポジトリの一部として、実際の開発現場での Issue 管理や PR レビューの参考例としてご活用ください。
+
 # SDD (Spec-Driven Development) Practice Repository
 
 [English](./README.md) | [日本語](./README_ja.md)
