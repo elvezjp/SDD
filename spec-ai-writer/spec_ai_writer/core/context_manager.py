@@ -7,6 +7,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from spec_ai_writer.utils.validation import (
+    validate_project_id,
+    validate_path_within_directory,
+)
+
 
 def generate_project_id() -> str:
     """Generate a unique alphanumeric project ID.
@@ -29,6 +34,7 @@ class ContextManager:
             display_name: Human-readable project name
             data_dir: Root data directory for all projects
         """
+        validate_project_id(project_id)
         self._project_id = project_id
         self._display_name = display_name
         self._data_dir = data_dir
@@ -70,7 +76,9 @@ class ContextManager:
 
     def get_project_dir(self) -> Path:
         """Get the project directory path."""
-        return Path(self._data_dir) / self._project_id
+        project_dir = Path(self._data_dir) / self._project_id
+        validate_path_within_directory(project_dir, Path(self._data_dir))
+        return project_dir
 
     def get_specs_dir(self) -> Path:
         """Get the specs subdirectory path."""
@@ -130,6 +138,7 @@ class ContextManager:
         Raises:
             FileNotFoundError: If the project directory doesn't exist
         """
+        validate_project_id(project_id)
         project_dir = Path(data_dir) / project_id
         project_json_path = project_dir / "project.json"
 
@@ -199,6 +208,8 @@ class ContextManager:
     def delete_project(self) -> None:
         """Delete the project directory and all its contents."""
         project_dir = self.get_project_dir()
+        # Defense-in-depth: verify path is within data_dir before rmtree
+        validate_path_within_directory(project_dir, Path(self._data_dir))
         if project_dir.exists():
             shutil.rmtree(project_dir)
 
@@ -368,7 +379,7 @@ class ContextManager:
         lines = []
         for i, qa in enumerate(qa_pairs, 1):
             lines.append(f"Q{i}: {qa['question']}")
-            lines.append(f"A{i}: {qa['answer']}")
+            lines.append(f"A{i}: <user_answer>{qa['answer']}</user_answer>")
             lines.append("")
 
         return "\n".join(lines)

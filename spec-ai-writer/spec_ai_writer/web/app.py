@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -63,13 +63,15 @@ async def health_check():
     }
 
 
-# Import routers
+# Import routers and auth
 from .routers import projects, interview, specifications
+from .auth import verify_api_key
 
-# Register routers
-app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
-app.include_router(interview.router, prefix="/api/interview", tags=["interview"])
-app.include_router(specifications.router, prefix="/api/specs", tags=["specifications"])
+# Register routers with authentication dependency
+api_deps = [Depends(verify_api_key)]
+app.include_router(projects.router, prefix="/api/projects", tags=["projects"], dependencies=api_deps)
+app.include_router(interview.router, prefix="/api/interview", tags=["interview"], dependencies=api_deps)
+app.include_router(specifications.router, prefix="/api/specs", tags=["specifications"], dependencies=api_deps)
 
 
 # Static files for production build

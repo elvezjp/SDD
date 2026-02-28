@@ -35,7 +35,15 @@ ENV/
 
 # Environment variables
 .env
-.env.local
+.env.*
+
+# Secrets and credentials
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
 
 # spec-ai-writer data directory
 data/

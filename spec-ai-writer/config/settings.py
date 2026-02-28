@@ -43,6 +43,12 @@ class Settings(BaseSettings):
         description="LLM temperature for generation"
     )
 
+    # Authentication
+    api_key: str = Field(
+        default="",
+        description="API key for endpoint authentication. If empty, auth is disabled."
+    )
+
     # Model configuration
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from spec_ai_writer.core.context_manager import ContextManager
+from spec_ai_writer.utils.validation import InvalidProjectIdError
 
 
 @pytest.mark.unit
@@ -204,3 +205,27 @@ class TestContextManager:
         assert project_dir.exists()
         manager.delete_project()
         assert not project_dir.exists()
+
+    def test_rejects_path_traversal_project_id(self, temp_dir):
+        """Test that path traversal in project_id is rejected."""
+        data_dir = str(temp_dir / "data")
+        with pytest.raises(InvalidProjectIdError):
+            ContextManager("../../etc/passwd", data_dir=data_dir)
+
+    def test_rejects_slash_in_project_id(self, temp_dir):
+        """Test that slashes in project_id are rejected."""
+        data_dir = str(temp_dir / "data")
+        with pytest.raises(InvalidProjectIdError):
+            ContextManager("foo/bar", data_dir=data_dir)
+
+    def test_rejects_dots_in_project_id(self, temp_dir):
+        """Test that dots in project_id are rejected."""
+        data_dir = str(temp_dir / "data")
+        with pytest.raises(InvalidProjectIdError):
+            ContextManager("..", data_dir=data_dir)
+
+    def test_load_project_rejects_traversal(self, temp_dir):
+        """Test that load_project rejects path traversal."""
+        data_dir = str(temp_dir / "data")
+        with pytest.raises(InvalidProjectIdError):
+            ContextManager.load_project("../../etc", data_dir=data_dir)

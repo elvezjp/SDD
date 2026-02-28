@@ -14,6 +14,7 @@ from fastapi.responses import FileResponse, PlainTextResponse
 
 from config.settings import get_settings
 from spec_ai_writer.core.phase_manager import PhaseManager
+from spec_ai_writer.utils.validation import validate_project_id, validate_path_within_directory
 from ..models import (
     SpecificationResponse,
     SpecificationListResponse,
@@ -29,7 +30,10 @@ phase_manager = PhaseManager()
 
 def _get_specs_dir(project_id: str) -> Path:
     """Get specs directory for project."""
-    return Path(settings.data_dir) / project_id / "specs"
+    validate_project_id(project_id)
+    specs_dir = Path(settings.data_dir) / project_id / "specs"
+    validate_path_within_directory(specs_dir, Path(settings.data_dir))
+    return specs_dir
 
 
 def _get_spec_file(project_id: str, filename: str) -> Path:
