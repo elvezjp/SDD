@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router';
 import { FileText, LayoutDashboard, Settings as SettingsIcon } from 'lucide-react';
 import clsx from 'clsx';
 import { version } from '../../package.json';
