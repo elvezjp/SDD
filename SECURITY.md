@@ -48,6 +48,7 @@ This repository contains Markdown documents and sample files, as well as executa
 - **Links**: External links in documents point to public resources, but please verify URLs before clicking
 - **Scripts**: Scripts in `docs/tools/scripts.md` are examples only. Please review the content thoroughly before executing in your environment
 - **Dependencies**: This repository uses Python and npm packages. Run `pip audit` and `npm audit` regularly to check for known vulnerabilities in dependencies
+- **Intended usage of spec-ai-writer**: `spec-ai-writer` is a development-support tool intended to be run on localhost (the same machine). Its API has no authentication, so do not expose it to a network (see [spec-ai-writer/README.md](spec-ai-writer/README.md#セキュリティ))
 
 ## Security Best Practices
 

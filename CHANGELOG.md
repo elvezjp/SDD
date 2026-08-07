@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **spec-ai-writer / Brand color unification**: Unified the UI color theme to the Elvez brand color (`#3A5CA8`) throughout the application (Issue #84 T7).
 - **spec-ai-writer / Removed project description field**: Removed the "description" field from the project creation form, leaving only the project name as required input (Issue #84 T6).
 
+### Security
+
+- **spec-ai-writer / Tightened CSP `connect-src`**: Narrowed the `connect-src` directive from `'self' ws: wss:` to `'self'`. The application does not use WebSocket, so the allowance for arbitrary `ws:`/`wss:` destinations was unnecessary and would have served as an exfiltration path if XSS ever occurred (Issue #91).
+- **spec-ai-writer / Documented the intended usage scope**: `README.md` and `SECURITY.md` now state explicitly that the tool is intended to run on localhost only and that its API has no authentication. The web server binds to `127.0.0.1` only, so it is unreachable from other machines (Issue #91).
+
 ### Internal (no user-facing impact)
 
 - **spec-ai-writer / Async LLM clients**: Converted all LLM clients (`ClaudeClient`, `OpenAIClient`, `BedrockClient`) from synchronous to `async/await`. The uvicorn event loop is no longer blocked during LLM calls, so requests such as fetching the project list respond immediately while the AI is generating. When the browser disconnects (e.g. the user presses the stop button), the in-flight LLM HTTP request is cancelled, stopping unnecessary resource consumption on all providers. Replaced `boto3` with `aiobotocore` for Bedrock to enable true async cancellation (Issue #85).
