@@ -20,6 +20,13 @@
 
 - **spec-ai-writer / ブランドカラー統一**: UI 全体のカラーテーマをエルブズのブランドカラー（`#3A5CA8`）に統一しました（Issue #84 T7）。
 - **spec-ai-writer / プロジェクト説明フィールドを削除**: プロジェクト作成フォームから「説明」フィールドを削除し、入力項目をプロジェクト名のみに絞りました（Issue #84 T6）。
+- **spec-ai-writer / 依存ライブラリの更新**: Python（`uv lock --upgrade`）およびフロントエンド（`npm update`）の依存関係を最新化しました。主な更新は anthropic 0.109.2 → 0.120.2、openai 2.42.0 → 2.53.0、fastapi 0.137.1 → 0.141.1、starlette 1.3.1 → 1.4.1、uvicorn 0.49.0 → 0.52.1 です。
+
+### セキュリティ
+
+- **spec-ai-writer / CSP `connect-src` の厳格化**: `connect-src` を `'self' ws: wss:` から `'self'` に絞りました。本アプリは WebSocket を使用しておらず、任意の `ws:`/`wss:` 接続先を許可する必要がないためです。XSS が成立した場合の情報持ち出し経路を塞ぎます（Issue #91）。
+- **spec-ai-writer / 想定利用範囲の明文化**: `README.md` と `SECURITY.md` に、本ツールがローカルホストでの実行を前提としており API に認証機構がないことを明記しました。Web サーバーは `127.0.0.1` のみにバインドされ、他のマシンからは到達できません（Issue #91）。
+- **spec-ai-writer / react-router を v8 に移行**: `react-router-dom` 7.18.2 に CSRF バイパスの脆弱性（[GHSA-qwww-vcr4-c8h2](https://github.com/advisories/GHSA-qwww-vcr4-c8h2)、high）が報告されていたため、`react-router` 8.3.0 に移行しました。当該脆弱性は RSC モード固有であり本アプリ（クライアントサイド SPA）は影響を受けませんが、`react-router-dom` は 7.18.2 が最終版で修正版が提供されないため、パッケージが統合された v8 へ移行しています。あわせて v8 の要件（Node 22.22.0+）に合わせ CI の Node を 20 から 22 に更新し、ルーティングのスモークテストを追加しました。
 
 ### 内部変更（ユーザー影響なし）
 

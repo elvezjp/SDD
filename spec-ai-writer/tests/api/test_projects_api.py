@@ -24,7 +24,7 @@ class TestProjectsAPI:
         csp = response.headers.get("content-security-policy", "")
         assert "default-src 'self'" in csp
         assert "script-src 'self'" in csp
-        assert "connect-src 'self' ws: wss:" in csp
+        assert "connect-src 'self';" in csp
 
     def test_create_project(self, test_client: TestClient, sample_project_data: dict):
         """Test creating a new project."""

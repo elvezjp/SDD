@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **spec-ai-writer / Brand color unification**: Unified the UI color theme to the Elvez brand color (`#3A5CA8`) throughout the application (Issue #84 T7).
 - **spec-ai-writer / Removed project description field**: Removed the "description" field from the project creation form, leaving only the project name as required input (Issue #84 T6).
+- **spec-ai-writer / Dependency updates**: Updated Python (`uv lock --upgrade`) and frontend (`npm update`) dependencies to their latest versions. Notable updates include anthropic 0.109.2 → 0.120.2, openai 2.42.0 → 2.53.0, fastapi 0.137.1 → 0.141.1, starlette 1.3.1 → 1.4.1, and uvicorn 0.49.0 → 0.52.1.
+
+### Security
+
+- **spec-ai-writer / Tightened CSP `connect-src`**: Narrowed the `connect-src` directive from `'self' ws: wss:` to `'self'`. The application does not use WebSocket, so the allowance for arbitrary `ws:`/`wss:` destinations was unnecessary and would have served as an exfiltration path if XSS ever occurred (Issue #91).
+- **spec-ai-writer / Documented the intended usage scope**: `README.md` and `SECURITY.md` now state explicitly that the tool is intended to run on localhost only and that its API has no authentication. The web server binds to `127.0.0.1` only, so it is unreachable from other machines (Issue #91).
+- **spec-ai-writer / Migrated to react-router v8**: `react-router-dom` 7.18.2 was affected by a CSRF bypass advisory ([GHSA-qwww-vcr4-c8h2](https://github.com/advisories/GHSA-qwww-vcr4-c8h2), high), so we migrated to `react-router` 8.3.0. The vulnerability is specific to RSC mode and does not affect this application (a client-side SPA), but `react-router-dom` ended at 7.18.2 with no patched release, so the only forward path is v8, where the packages were consolidated. CI Node was bumped from 20 to 22 to meet the v8 requirement (Node 22.22.0+), and routing smoke tests were added.
 
 ### Internal (no user-facing impact)
 
