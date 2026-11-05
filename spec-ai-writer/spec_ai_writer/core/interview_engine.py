@@ -371,7 +371,9 @@ class InterviewEngine:
             raise
         except (LLMResponseError, Exception) as e:
             logger.warning(f"初回質問の生成に失敗、フォールバックを使用: {e}")
-            return f"フェーズ{phase_num}「{phase_info.name}」を開始します。\n\n{phase_info.description}\n\nまず、プロジェクトの概要を教えてください。"
+            raise LLMResponseError(
+                f"初回質問を生成できませんでした（フェーズ {phase_num}）。"
+            ) from e
 
     async def _generate_follow_up_question(
         self,
@@ -400,7 +402,7 @@ class InterviewEngine:
             raise
         except (LLMResponseError, Exception) as e:
             logger.warning(f"フォローアップ質問の生成に失敗: {e}")
-            return "もう少し詳しく教えていただけますか？"
+            raise LLMResponseError("フォローアップ質問を生成できませんでした。") from e
 
     async def _is_phase_complete(
         self,
