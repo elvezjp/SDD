@@ -19,6 +19,8 @@ In the book, it is referred to as the "practice repository" or "SDD repository."
 The name "SDD" stands for **Spec-Driven Development**. This remote repository contains sample files organized around the "4 Principles and 7 Processes of Spec-Driven Development" described in the book, and serves as **a reference for how to structure a repository in real projects**.
 
 > For readers of the book: Please check the [Errata](./docs/guides/errata.md) for any known corrections.
+>
+> This repository also makes public the discussions that are central to Spec-Driven Development. To see how we responded to an external API update, follow the investigation, decisions, and fixes starting from [#98](https://github.com/elvezjp/SDD/issues/98).
 
 ## Purpose of This Repository
 
