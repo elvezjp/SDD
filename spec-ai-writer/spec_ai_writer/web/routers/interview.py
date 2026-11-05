@@ -18,6 +18,7 @@ from spec_ai_writer.llm.factory import LLMFactory
 from spec_ai_writer.llm.exceptions import (
     LLMAuthenticationError,
     LLMConnectionError,
+    LLMResponseError,
 )
 from ..models import (
     InterviewStartRequest,
@@ -213,6 +214,9 @@ async def start_interview(request: InterviewStartRequest):
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="LLMサービスに接続できません。ネットワーク接続を確認してください。"
         )
+    except LLMResponseError as e:
+        logger.error(f"LLM response error: {e}")
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
     except Exception as e:
         logger.error(f"Failed to start interview: {e}")
         raise HTTPException(
@@ -365,6 +369,9 @@ async def submit_answer(http_request: Request, request: UserAnswerRequest):
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="LLMサービスに接続できません。ネットワーク接続を確認してください。"
         )
+    except LLMResponseError as e:
+        logger.error(f"LLM response error: {e}")
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
     except Exception as e:
         logger.error(f"Failed to process answer: {e}")
         raise HTTPException(

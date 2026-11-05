@@ -26,6 +26,14 @@ function format422Error(detail: Array<{ type: string; ctx?: Record<string, unkno
     .join('、');
 }
 
+function formatApiError(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error)) {
+    const detail = error.response?.data?.detail;
+    if (typeof detail === 'string' && detail.trim()) return detail;
+  }
+  return fallback;
+}
+
 export default function Interview() {
   const { projectId } = useParams<{ projectId: string }>();
   const [input, setInput] = useState('');
@@ -105,7 +113,7 @@ export default function Interview() {
           });
         } catch (questionErr) {
           if (!axios.isCancel(questionErr)) {
-            setError('最初の質問の生成に失敗しました。再度お試しください。');
+            setError(formatApiError(questionErr, '最初の質問の生成に失敗しました。再度お試しください。'));
           }
         } finally {
           setWaitingForResponse(false);
@@ -213,7 +221,7 @@ export default function Interview() {
         Array.isArray(err.response.data?.detail) &&
         err.response.data.detail.length > 0
           ? format422Error(err.response.data.detail)
-          : '回答の送信中にエラーが発生しました。再度お試しください。';
+          : formatApiError(err, '回答の送信中にエラーが発生しました。再度お試しください。');
       addMessage({
         role: 'system',
         content,
