@@ -1,3 +1,7 @@
+> [!NOTE]
+> **仕様駆動開発で大切なやり取りの過程も公開しています。**
+> 外部APIの更新にどう対応したかは、[#98](https://github.com/elvezjp/SDD/issues/98) から調査、判断、修正の流れをたどれます。
+
 # SDD（仕様駆動開発） 練習用リポジトリ
 
 [English](./README.md) | [日本語](./README_ja.md)
