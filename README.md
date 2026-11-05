@@ -3,6 +3,8 @@
 > このリポジトリは書籍『仕様駆動開発 実践入門』の練習用リポジトリです。
 > 日本語の README は [README_ja.md](./README_ja.md) をご覧ください。
 > **書籍の正誤表は[こちら](./docs/guides/errata.md)です。**
+> **仕様駆動開発で大切なやり取りの過程も公開しています。**
+> 外部APIの更新にどう対応したかは、[#98](https://github.com/elvezjp/SDD/issues/98) から調査、判断、修正の流れをたどれます。
 
 # SDD (Spec-Driven Development) Practice Repository
 
