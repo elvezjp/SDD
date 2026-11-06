@@ -1,6 +1,7 @@
 """Claude API client implementation."""
 
 import logging
+import re
 from typing import Dict, List, Optional
 
 import httpx
@@ -10,6 +11,27 @@ from .base import BaseLLMClient
 from .exceptions import LLMAuthenticationError, LLMConnectionError, LLMResponseError
 
 logger = logging.getLogger(__name__)
+
+# e.g. "claude-haiku-4-5-20251001", "claude-sonnet-4-20250514", "claude-haiku-5-5"
+_MODEL_VERSION_RE = re.compile(r"^claude-[a-z]+-(\d+)(?:-(\d{1,2}))?(?:-\d{8})?$")
+
+
+def temperature_supported(model: str) -> bool:
+    """
+    Return whether the Claude model accepts the temperature parameter.
+
+    Claude 4.7 and later (including the 5 family) reject sampling parameters
+    with a 400 error, so temperature is only sent to Claude 4.6 and earlier.
+    Unknown model names are treated as unsupported, since omitting
+    temperature never causes a request error.
+    """
+    if model.startswith("claude-3"):
+        return True
+    match = _MODEL_VERSION_RE.match(model)
+    if not match:
+        return False
+    major, minor = int(match.group(1)), int(match.group(2) or 0)
+    return (major, minor) <= (4, 6)
 
 
 class ClaudeClient(BaseLLMClient):
@@ -78,16 +100,19 @@ class ClaudeClient(BaseLLMClient):
             api_kwargs = {
                 "model": self.model,
                 "max_tokens": tokens,
-                "temperature": temp,
                 "messages": conversation_messages
             }
+
+            if temperature_supported(self.model):
+                api_kwargs["temperature"] = temp
 
             # Add system message if present
             if system_message:
                 api_kwargs["system"] = system_message
 
             response = await self.client.messages.create(**api_kwargs)
-            return response.content[0].text
+            # Models with thinking enabled return thinking blocks before the text
+            return "".join(block.text for block in response.content if block.type == "text")
         except AuthenticationError as e:
             logger.error(f"Claude authentication failed: {e}")
             raise LLMAuthenticationError(
