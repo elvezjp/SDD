@@ -11,39 +11,36 @@
 
 ## [Unreleased]
 
+---
+
+## [1.0.6] - 2026-11-09
+
 ### 追加
 
-- **spec-ai-writer / インタビュー入力フォームの改善**: テキストエリアを複数行対応にし、`Shift+Enter` で改行・`Enter` で送信できるようにしました。長い回答を入力しやすくなります（Issue #84 T1–T3）。
-- **spec-ai-writer / インタビュー中断ボタン**: 回答中に「中断」ボタンを押すと現在のフェーズを途中で切り上げてトップへ戻れるようになりました（Issue #84 T1–T3）。
+- **spec-ai-writer / インタビュー入力の改善**: 複数行の入力（`Shift+Enter` で改行、`Enter` で送信）と、途中で切り上げられる「中断」ボタンを追加しました（Issue #84）。
+- **spec-ai-writer / LLM 設定の拡張**: 設定画面で 7 種類のプロバイダを選び、それぞれのモデルや接続情報を設定できるようにしました（Issue #88）。
 
 ### 変更
 
-- **spec-ai-writer / ブランドカラー統一**: UI 全体のカラーテーマをエルブズのブランドカラー（`#3A5CA8`）に統一しました（Issue #84 T7）。
-- **spec-ai-writer / プロジェクト説明フィールドを削除**: プロジェクト作成フォームから「説明」フィールドを削除し、入力項目をプロジェクト名のみに絞りました（Issue #84 T6）。
-- **spec-ai-writer / 依存ライブラリの更新**: Python（`uv lock --upgrade`）およびフロントエンド（`npm update`）の依存関係を最新化しました。主な更新は anthropic 0.109.2 → 0.120.2、openai 2.42.0 → 2.53.0、fastapi 0.137.1 → 0.141.1、starlette 1.3.1 → 1.4.1、uvicorn 0.49.0 → 0.52.1 です。
+- **spec-ai-writer / 画面の調整**: カラーテーマをブランドカラーに統一し、プロジェクト作成の入力項目をプロジェクト名のみにしました（Issue #84）。
+- **spec-ai-writer / 依存ライブラリの更新**: Python とフロントエンドの依存ライブラリを最新化しました。
 
 ### 修正
 
-- **spec-ai-writer / Claude 4.7 以降で AI の呼び出しが失敗する問題を修正**: Claude 4.7 以降が 400 エラーで拒否する `temperature` を、Claude と AWS Bedrock のリクエストに含めないようにしました。思考（thinking）が有効なモデルでも動くよう、応答は `text` ブロックだけを読みます。代わりの設定はないため、Temperature の値と抽出処理の低い値は、どのモデルでも Claude には適用されなくなります。設定画面では、これらのプロバイダではスライダーを無効にしています（Issue #96）。
-- **spec-ai-writer / AI の呼び出しの失敗を画面に出す**: インタビューで AI（LLM）の呼び出しが失敗したとき、定型文を AI の質問として表示していたのをやめ、原因を含むエラーを画面に出すようにしました。フェーズの完了判定が失敗したときも「未完了」として扱わず、エラーにします。あわせて、API キーが無効なときや接続できないときのエラーが、原因の分からない 500 になっていたのを直しました（Issue #97）。
-- **spec-ai-writer / 回答の二重保存を防ぐ**: 回答を送ったあとに AI の呼び出しが失敗した場合は、その回答を保存しないようにしました。同じ回答を送り直しても、二重に保存されません。質問が無いまま送られた回答は受け付けず、ページの再読み込みを案内します（Issue #97）。
+- **spec-ai-writer / Claude 4.7 以降への対応**: Claude 4.7 以降のモデルで AI の呼び出しが失敗する問題を修正しました。Claude と AWS Bedrock には Temperature を送らなくなります（Issue #96）。
+- **spec-ai-writer / AI の呼び出しの失敗を画面に表示**: 失敗時に定型文を質問として表示せず、原因を含むエラーを表示するようにしました。失敗した回答は保存しません（Issue #97）。
 
 ### セキュリティ
 
-- **spec-ai-writer / CSP `connect-src` の厳格化**: `connect-src` を `'self' ws: wss:` から `'self'` に絞りました。本アプリは WebSocket を使用しておらず、任意の `ws:`/`wss:` 接続先を許可する必要がないためです。XSS が成立した場合の情報持ち出し経路を塞ぎます（Issue #91）。
-- **spec-ai-writer / 想定利用範囲の明文化**: `README.md` と `SECURITY.md` に、本ツールがローカルホストでの実行を前提としており API に認証機構がないことを明記しました。Web サーバーは `127.0.0.1` のみにバインドされ、他のマシンからは到達できません（Issue #91）。
-- **spec-ai-writer / react-router を v8 に移行**: CSRF バイパスの脆弱性（[GHSA-qwww-vcr4-c8h2](https://github.com/advisories/GHSA-qwww-vcr4-c8h2)、high）に対応するため、`react-router-dom` 7.18.2 から `react-router` 8.3.0 に移行しました。本アプリ（クライアントサイド SPA）は影響を受けませんが、7.x には修正版がありません。v8 の要件に合わせ、CI の Node を 20 から 22 に上げています。
-- **spec-ai-writer / Python 依存のセキュリティ更新**: certifi の critical（侵害されたルート CA の同梱）や GitPython の RCE を含む Dependabot アラートに対応しました。GitPython 3.1.58 → 3.2.1、certifi → 2026.10.23、aiohttp → 3.14.5、urllib3 → 2.8.0、multidict → 6.9.1、black → 26.10.1 に更新し、`pyproject.toml` の下限も引き上げています（`GitPython>=3.2.1`、`black>=26.10.1`）（#93, #95）。
-- **spec-ai-writer / フロントエンド依存のセキュリティ更新**: Dependabot と `npm audit` のアラートに対応し、axios → 1.21.0、vite → 8.3.5、vitest → 4.1.12 と、間接依存（undici・follow-redirects・nanoid・zod など）を更新しました。上流のパッケージが脆弱なバージョンに固定している `postcss-selector-parser` と `minimatch` は、`overrides` で引き上げています（`^6.1.5`、`^11.0.4`）。axios と follow-redirects を除き、開発・ビルド時のみの依存です（#93, #95）。
+- **spec-ai-writer / CSP の厳格化**: `connect-src` を `'self'` に絞りました（Issue #91）。
+- **spec-ai-writer / 想定利用範囲の明文化**: ローカルホストでの実行を前提とし、API に認証がないことを `README.md` と `SECURITY.md` に明記しました（Issue #91）。
+- **spec-ai-writer / react-router を v8 に移行**: CSRF バイパスの脆弱性（high）への対応です。本アプリは影響を受けませんが、7.x には修正版がありません。CI の Node は 20 から 22 に上げています。
+- **spec-ai-writer / 依存ライブラリのセキュリティ更新**: certifi の critical（侵害されたルート CA の同梱）や GitPython の RCE を含む Dependabot アラートに対応しました（#93, #95）。
 
 ### 内部変更（ユーザー影響なし）
 
-- **spec-ai-writer / LLM クライアントの非同期化**: `ClaudeClient`・`OpenAIClient`・`BedrockClient` の全クライアントを同期から `async/await` に移行。LLM の応答待ち中も uvicorn のイベントループがブロックされなくなり、プロジェクト一覧の取得など他のリクエストが待たされなくなります。ブラウザが切断した場合（中断ボタン押下など）、処理中の LLM HTTP リクエストをキャンセルし、全プロバイダーでリソースの無駄な消費を停止します。Bedrock は真の非同期キャンセルを実現するため `boto3` から `aiobotocore` に移行しました（Issue #85）。
-- **spec-ai-writer / パッケージ構成の整理**: `config/` および `templates/` ディレクトリを `spec_ai_writer/` パッケージ内に移動し、トップレベルの散在を解消しました（Issue #84 T5）。
-- **spec-ai-writer / 未使用コードの削除**: 未使用の定数・メソッド・到達不能なコンポーネントを削除しました（Issue #84 T4）。
-- **spec-ai-writer / プロンプトファイルの統合**: フェーズごとに分散していた 7 つのプロンプトファイル（`config/prompts/phase_0[1-7]_prompts.py`）を `config/prompts.py` の辞書 1 つに統合しました。
-- **spec-ai-writer / `project.json` の廃止**: プロジェクトメタデータを `interview.json` に一元化し、`project.json` を廃止しました。
-- **spec-ai-writer / `utils/` ディレクトリの削除**: 中身が空だった `spec_ai_writer/utils/` を削除しました。
+- **spec-ai-writer / LLM クライアントの非同期化**: 全クライアントを `async/await` に移行し、中断時に処理中の呼び出しをキャンセルできるようにしました（Issue #85）。
+- **spec-ai-writer / コードの整理**: パッケージ構成の整理、未使用コードの削除、プロンプトファイルの統合、`project.json` の廃止を行いました（Issue #84）。
 
 ---
 
@@ -142,6 +139,7 @@
 
 | バージョン | 主な機能 |
 |------------|----------|
+| 1.0.6      | Claude 4.7以降への対応、AI呼び出しの失敗を画面に表示、インタビュー入力の改善、LLM設定の7プロバイダ対応、依存ライブラリのセキュリティアップデート |
 | 1.0.5      | 依存ライブラリのセキュリティアップデート（idna 3.15）、CONTRIBUTINGにタグ運用ルールを追記 |
 | 1.0.4      | `--log-level` CLIオプション、インタビュー途中再開修正（Issue #48, #67） |
 | 1.0.3      | OpenRouter・ローカルLLM対応、Web UI設定ページ、バージョン統一（Issue #59, #60） |

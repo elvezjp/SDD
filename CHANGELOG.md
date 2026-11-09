@@ -11,39 +11,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.6] - 2026-11-09
+
 ### Added
 
-- **spec-ai-writer / Interview input improvements**: The text area now supports multiple lines — `Shift+Enter` inserts a newline and `Enter` submits, making it easier to write longer answers (Issue #84 T1–T3).
-- **spec-ai-writer / Interview stop button**: A "Stop" button lets users end the current phase mid-interview and return to the top page (Issue #84 T1–T3).
+- **spec-ai-writer / Interview input improvements**: Added multi-line input (`Shift+Enter` for a newline, `Enter` to submit) and a "Stop" button to end a phase midway (Issue #84).
+- **spec-ai-writer / Expanded LLM settings**: The Settings screen now supports seven providers, each with its own model and connection settings (Issue #88).
 
 ### Changed
 
-- **spec-ai-writer / Brand color unification**: Unified the UI color theme to the Elvez brand color (`#3A5CA8`) throughout the application (Issue #84 T7).
-- **spec-ai-writer / Removed project description field**: Removed the "description" field from the project creation form, leaving only the project name as required input (Issue #84 T6).
-- **spec-ai-writer / Dependency updates**: Updated Python (`uv lock --upgrade`) and frontend (`npm update`) dependencies to their latest versions. Notable updates include anthropic 0.109.2 → 0.120.2, openai 2.42.0 → 2.53.0, fastapi 0.137.1 → 0.141.1, starlette 1.3.1 → 1.4.1, and uvicorn 0.49.0 → 0.52.1.
+- **spec-ai-writer / UI adjustments**: Unified the color theme to the brand color and reduced project creation to the project name only (Issue #84).
+- **spec-ai-writer / Dependency updates**: Updated Python and frontend dependencies to their latest versions.
 
 ### Fixed
 
-- **spec-ai-writer / AI calls failing on Claude 4.7 and later**: Claude and AWS Bedrock requests no longer send `temperature`, which Claude 4.7 and later reject with a 400 error, and responses are now read from `text` blocks only so that models with thinking enabled work. There is no replacement setting, so the Temperature value and the lower value used for extraction no longer apply to Claude on any model; the Settings screen disables the slider for these providers (Issue #96).
-- **spec-ai-writer / Show LLM failures in the UI**: When an LLM call fails during the interview, the app no longer shows a canned question as if it came from the AI. It shows an error with the cause instead. A failed phase completion check is also reported as an error rather than treated as "not complete". Errors for an invalid API key or a connection failure, which used to become an unexplained 500, now reach the UI with their cause (Issue #97).
-- **spec-ai-writer / Prevent answers from being saved twice**: If the LLM call fails after an answer is sent, the answer is no longer kept, so sending it again does not save it twice. An answer sent when there is no question is rejected with a message to reload the page (Issue #97).
+- **spec-ai-writer / Claude 4.7 and later support**: Fixed AI calls failing on Claude 4.7 and later. `temperature` is no longer sent to Claude or AWS Bedrock (Issue #96).
+- **spec-ai-writer / Show LLM failures in the UI**: When an LLM call fails, the app shows an error with the cause instead of a canned question, and does not keep the answer (Issue #97).
 
 ### Security
 
-- **spec-ai-writer / Tightened CSP `connect-src`**: Narrowed the `connect-src` directive from `'self' ws: wss:` to `'self'`. The application does not use WebSocket, so the allowance for arbitrary `ws:`/`wss:` destinations was unnecessary and would have served as an exfiltration path if XSS ever occurred (Issue #91).
-- **spec-ai-writer / Documented the intended usage scope**: `README.md` and `SECURITY.md` now state explicitly that the tool is intended to run on localhost only and that its API has no authentication. The web server binds to `127.0.0.1` only, so it is unreachable from other machines (Issue #91).
-- **spec-ai-writer / Migrated to react-router v8**: Migrated from `react-router-dom` 7.18.2 to `react-router` 8.3.0 to address a CSRF bypass advisory ([GHSA-qwww-vcr4-c8h2](https://github.com/advisories/GHSA-qwww-vcr4-c8h2), high). The advisory does not affect this client-side SPA, but 7.x has no patched release. CI Node was raised from 20 to 22 to meet the v8 requirement.
-- **spec-ai-writer / Python dependency security updates**: Addressed Dependabot alerts, including a critical one in certifi (compromised root CAs) and several in GitPython, including RCE. Updated GitPython 3.1.58 → 3.2.1, certifi → 2026.10.23, aiohttp → 3.14.5, urllib3 → 2.8.0, multidict → 6.9.1, and black → 26.10.1, and raised the minimum versions in `pyproject.toml` (`GitPython>=3.2.1`, `black>=26.10.1`) (#93, #95).
-- **spec-ai-writer / Frontend dependency security updates**: Addressed Dependabot and `npm audit` alerts by updating axios → 1.21.0, vite → 8.3.5, vitest → 4.1.12, and transitive dependencies (undici, follow-redirects, nanoid, zod, and others). `postcss-selector-parser` and `minimatch`, which upstream packages hold at vulnerable versions, are raised with `overrides` (`^6.1.5`, `^11.0.4`). Except for axios and follow-redirects, these are development/build-time dependencies (#93, #95).
+- **spec-ai-writer / Tightened CSP**: Narrowed `connect-src` to `'self'` (Issue #91).
+- **spec-ai-writer / Documented the intended usage scope**: `README.md` and `SECURITY.md` now state that the tool is intended for localhost and that its API has no authentication (Issue #91).
+- **spec-ai-writer / Migrated to react-router v8**: Addresses a CSRF bypass advisory (high). It does not affect this application, but 7.x has no patched release. CI Node was raised from 20 to 22.
+- **spec-ai-writer / Dependency security updates**: Addressed Dependabot alerts, including a critical one in certifi (compromised root CAs) and an RCE in GitPython (#93, #95).
 
 ### Internal (no user-facing impact)
 
-- **spec-ai-writer / Async LLM clients**: Converted all LLM clients (`ClaudeClient`, `OpenAIClient`, `BedrockClient`) from synchronous to `async/await`. The uvicorn event loop is no longer blocked during LLM calls, so requests such as fetching the project list respond immediately while the AI is generating. When the browser disconnects (e.g. the user presses the stop button), the in-flight LLM HTTP request is cancelled, stopping unnecessary resource consumption on all providers. Replaced `boto3` with `aiobotocore` for Bedrock to enable true async cancellation (Issue #85).
-- **spec-ai-writer / Package restructure**: Moved `config/` and `templates/` directories inside the `spec_ai_writer/` package to eliminate top-level clutter (Issue #84 T5).
-- **spec-ai-writer / Dead code removal**: Deleted unused constants, methods, and unreachable components (Issue #84 T4).
-- **spec-ai-writer / Prompt file consolidation**: Merged seven per-phase prompt files (`config/prompts/phase_0[1-7]_prompts.py`) into a single `config/prompts.py` dictionary.
-- **spec-ai-writer / Retired `project.json`**: Consolidated project metadata into `interview.json`, eliminating the separate `project.json` file.
-- **spec-ai-writer / Removed empty `utils/` directory**: Deleted the empty `spec_ai_writer/utils/` directory.
+- **spec-ai-writer / Async LLM clients**: Converted all LLM clients to `async/await`, so in-flight calls can be cancelled when an interview is stopped (Issue #85).
+- **spec-ai-writer / Code cleanup**: Restructured packages, removed unused code, consolidated prompt files, and retired `project.json` (Issue #84).
 
 ---
 
@@ -142,6 +139,7 @@ Initial release. Published as the practice repository for *Spec-Driven Developme
 
 | Version | Key Features |
 |---------|-------------|
+| 1.0.6   | Claude 4.7+ support, LLM failures shown in the interview UI, interview input improvements, seven-provider LLM settings, security dependency updates |
 | 1.0.5   | Security dependency updates (idna 3.15); tag operation rules added to CONTRIBUTING |
 | 1.0.4   | `--log-level` CLI option, interview resume fix (Issue #48, #67) |
 | 1.0.3   | OpenRouter & Local LLM support, Web UI settings, version alignment (Issue #59, #60) |
