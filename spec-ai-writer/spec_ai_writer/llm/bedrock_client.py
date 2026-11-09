@@ -49,7 +49,7 @@ class BedrockClient(BaseLLMClient):
             region: AWS region (e.g., "us-west-2", "us-east-1")
             aws_access_key_id: AWS access key (optional, can use IAM role)
             aws_secret_access_key: AWS secret key (optional, can use IAM role)
-            temperature: Sampling temperature (0.0-1.0)
+            temperature: Accepted for interface compatibility; not sent to the API
             max_tokens: Maximum tokens to generate
             timeout: Timeout in seconds for API calls
 
@@ -111,11 +111,12 @@ class BedrockClient(BaseLLMClient):
         Send chat messages to Claude via Bedrock and get response.
 
         Bedrock API requires system message to be passed in a separate field,
-        and content must be a list of content blocks.
+        and content must be a list of content blocks. Sampling parameters are
+        never sent, because Claude 4.7 and later reject them with a 400 error.
 
         Args:
             messages: List of message dicts with 'role' and 'content' keys
-            temperature: Override default temperature
+            temperature: Accepted for interface compatibility; not sent to the API
             max_tokens: Override default max_tokens
 
         Returns:
@@ -138,7 +139,6 @@ class BedrockClient(BaseLLMClient):
         request_body = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": max_tokens or self.max_tokens,
-            "temperature": temperature if temperature is not None else self.temperature,
             "messages": self._convert_messages(conversation_messages)
         }
 

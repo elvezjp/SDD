@@ -29,7 +29,7 @@ class ClaudeClient(BaseLLMClient):
         Args:
             api_key: Anthropic API key
             model: Claude model name
-            temperature: Generation temperature
+            temperature: Accepted for interface compatibility; not sent to the API
             max_tokens: Maximum tokens to generate
             timeout: Timeout in seconds for API calls
         """
@@ -49,9 +49,12 @@ class ClaudeClient(BaseLLMClient):
         Anthropic API requires system message to be passed separately.
         This method extracts the system message and passes it as a parameter.
 
+        Sampling parameters are never sent: Claude 4.7 and later reject them
+        with a 400 error, and API version 2026-10-21 rejects them on every model.
+
         Args:
             messages: List of message dicts with 'role' and 'content'
-            temperature: Override default temperature
+            temperature: Accepted for interface compatibility; not sent to the API
             max_tokens: Maximum tokens to generate
 
         Returns:
@@ -60,7 +63,6 @@ class ClaudeClient(BaseLLMClient):
         Raises:
             Exception: If API call fails
         """
-        temp = temperature if temperature is not None else self.temperature
         tokens = max_tokens if max_tokens is not None else self.max_tokens
 
         # Separate system message from conversation messages
@@ -78,7 +80,6 @@ class ClaudeClient(BaseLLMClient):
             api_kwargs = {
                 "model": self.model,
                 "max_tokens": tokens,
-                "temperature": temp,
                 "messages": conversation_messages
             }
 
@@ -87,7 +88,8 @@ class ClaudeClient(BaseLLMClient):
                 api_kwargs["system"] = system_message
 
             response = await self.client.messages.create(**api_kwargs)
-            return response.content[0].text
+            # Models with thinking enabled return thinking blocks before the text
+            return "".join(block.text for block in response.content if block.type == "text")
         except AuthenticationError as e:
             logger.error(f"Claude authentication failed: {e}")
             raise LLMAuthenticationError(

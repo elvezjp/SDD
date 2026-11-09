@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **spec-ai-writer / AI calls failing on Claude 4.7 and later**: Claude and AWS Bedrock requests no longer send `temperature`, which Claude 4.7 and later reject with a 400 error, and responses are now read from `text` blocks only so that models with thinking enabled work. There is no replacement setting, so the Temperature value and the lower value used for extraction no longer apply to Claude on any model; the Settings screen disables the slider for these providers (Issue #96).
 - **spec-ai-writer / Show LLM failures in the UI**: When an LLM call fails during the interview, the app no longer shows a canned question as if it came from the AI. It shows an error with the cause instead. A failed phase completion check is also reported as an error rather than treated as "not complete". Errors for an invalid API key or a connection failure, which used to become an unexplained 500, now reach the UI with their cause (Issue #97).
 - **spec-ai-writer / Prevent answers from being saved twice**: If the LLM call fails after an answer is sent, the answer is no longer kept, so sending it again does not save it twice. An answer sent when there is no question is rejected with a message to reload the page (Issue #97).
 

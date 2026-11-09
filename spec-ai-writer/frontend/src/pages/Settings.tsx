@@ -19,6 +19,7 @@ interface ProviderMeta {
   hasApiKey: boolean;
   hasBaseUrl: boolean;
   hasBedrock: boolean;
+  appliesTemperature: boolean;
 }
 
 const PROVIDER_META: Record<LLMProvider, ProviderMeta> = {
@@ -27,42 +28,49 @@ const PROVIDER_META: Record<LLMProvider, ProviderMeta> = {
     hasApiKey: true,
     hasBaseUrl: false,
     hasBedrock: false,
+    appliesTemperature: false,
   },
   openai: {
     label: "OpenAI",
     hasApiKey: true,
     hasBaseUrl: false,
     hasBedrock: false,
+    appliesTemperature: true,
   },
   openrouter: {
     label: "OpenRouter",
     hasApiKey: true,
     hasBaseUrl: false,
     hasBedrock: false,
+    appliesTemperature: true,
   },
   ollama: {
     label: "Ollama (ローカル)",
     hasApiKey: false,
     hasBaseUrl: true,
     hasBedrock: false,
+    appliesTemperature: true,
   },
   lmstudio: {
     label: "LM Studio (ローカル)",
     hasApiKey: false,
     hasBaseUrl: true,
     hasBedrock: false,
+    appliesTemperature: true,
   },
   kimi: {
     label: "Moonshot",
     hasApiKey: true,
     hasBaseUrl: false,
     hasBedrock: false,
+    appliesTemperature: true,
   },
   bedrock: {
     label: "AWS Bedrock",
     hasApiKey: false,
     hasBaseUrl: false,
     hasBedrock: true,
+    appliesTemperature: false,
   },
 };
 
@@ -480,13 +488,17 @@ function SettingsForm({ initialData }: { initialData: SettingsResponse }) {
               max={2}
               step={0.05}
               value={temperature}
+              disabled={!PROVIDER_META[activeProvider].appliesTemperature}
               onChange={(e) => {
                 setTemperature(parseFloat(e.target.value));
                 markDirty();
               }}
-              className="w-full"
+              className="w-full disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
+          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+            生成パラメータは、対応していないモデルには送信されません。
+          </p>
         </div>
 
         {/* Save */}
