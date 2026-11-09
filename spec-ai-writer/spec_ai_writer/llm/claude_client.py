@@ -1,7 +1,6 @@
 """Claude API client implementation."""
 
 import logging
-import re
 from typing import Dict, List, Optional
 
 import httpx
@@ -11,27 +10,6 @@ from .base import BaseLLMClient
 from .exceptions import LLMAuthenticationError, LLMConnectionError, LLMResponseError
 
 logger = logging.getLogger(__name__)
-
-# e.g. "claude-haiku-4-5-20251001", "claude-sonnet-4-20250514", "claude-haiku-5-5"
-_MODEL_VERSION_RE = re.compile(r"^claude-[a-z]+-(\d+)(?:-(\d{1,2}))?(?:-\d{8})?$")
-
-
-def temperature_supported(model: str) -> bool:
-    """
-    Return whether the Claude model accepts the temperature parameter.
-
-    Claude 4.7 and later (including the 5 family) reject sampling parameters
-    with a 400 error, so temperature is only sent to Claude 4.6 and earlier.
-    Unknown model names are treated as unsupported, since omitting
-    temperature never causes a request error.
-    """
-    if model.startswith("claude-3"):
-        return True
-    match = _MODEL_VERSION_RE.match(model)
-    if not match:
-        return False
-    major, minor = int(match.group(1)), int(match.group(2) or 0)
-    return (major, minor) <= (4, 6)
 
 
 class ClaudeClient(BaseLLMClient):
@@ -51,7 +29,7 @@ class ClaudeClient(BaseLLMClient):
         Args:
             api_key: Anthropic API key
             model: Claude model name
-            temperature: Generation temperature
+            temperature: Accepted for interface compatibility; not sent to the API
             max_tokens: Maximum tokens to generate
             timeout: Timeout in seconds for API calls
         """
@@ -71,9 +49,12 @@ class ClaudeClient(BaseLLMClient):
         Anthropic API requires system message to be passed separately.
         This method extracts the system message and passes it as a parameter.
 
+        Sampling parameters are never sent: Claude 4.7 and later reject them
+        with a 400 error, and API version 2026-10-21 rejects them on every model.
+
         Args:
             messages: List of message dicts with 'role' and 'content'
-            temperature: Override default temperature
+            temperature: Accepted for interface compatibility; not sent to the API
             max_tokens: Maximum tokens to generate
 
         Returns:
@@ -82,7 +63,6 @@ class ClaudeClient(BaseLLMClient):
         Raises:
             Exception: If API call fails
         """
-        temp = temperature if temperature is not None else self.temperature
         tokens = max_tokens if max_tokens is not None else self.max_tokens
 
         # Separate system message from conversation messages
@@ -102,9 +82,6 @@ class ClaudeClient(BaseLLMClient):
                 "max_tokens": tokens,
                 "messages": conversation_messages
             }
-
-            if temperature_supported(self.model):
-                api_kwargs["temperature"] = temp
 
             # Add system message if present
             if system_message:

@@ -22,6 +22,10 @@
 - **spec-ai-writer / プロジェクト説明フィールドを削除**: プロジェクト作成フォームから「説明」フィールドを削除し、入力項目をプロジェクト名のみに絞りました（Issue #84 T6）。
 - **spec-ai-writer / 依存ライブラリの更新**: Python（`uv lock --upgrade`）およびフロントエンド（`npm update`）の依存関係を最新化しました。主な更新は anthropic 0.109.2 → 0.120.2、openai 2.42.0 → 2.53.0、fastapi 0.137.1 → 0.141.1、starlette 1.3.1 → 1.4.1、uvicorn 0.49.0 → 0.52.1 です。
 
+### 修正
+
+- **spec-ai-writer / Claude 4.7 以降で AI の呼び出しが失敗する問題を修正**: Claude 4.7 以降が 400 エラーで拒否する `temperature` を、Claude と AWS Bedrock のリクエストに含めないようにしました。思考（thinking）が有効なモデルでも動くよう、応答は `text` ブロックだけを読みます。代わりの設定はないため、Temperature の値と抽出処理の低い値は、どのモデルでも Claude には適用されなくなります。設定画面では、これらのプロバイダではスライダーを無効にしています（Issue #96）。
+
 ### セキュリティ
 
 - **spec-ai-writer / CSP `connect-src` の厳格化**: `connect-src` を `'self' ws: wss:` から `'self'` に絞りました。本アプリは WebSocket を使用しておらず、任意の `ws:`/`wss:` 接続先を許可する必要がないためです。XSS が成立した場合の情報持ち出し経路を塞ぎます（Issue #91）。

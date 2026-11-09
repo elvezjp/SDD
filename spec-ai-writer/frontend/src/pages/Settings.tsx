@@ -19,6 +19,7 @@ interface ProviderMeta {
   hasApiKey: boolean;
   hasBaseUrl: boolean;
   hasBedrock: boolean;
+  appliesTemperature: boolean;
 }
 
 const PROVIDER_META: Record<LLMProvider, ProviderMeta> = {
@@ -27,42 +28,49 @@ const PROVIDER_META: Record<LLMProvider, ProviderMeta> = {
     hasApiKey: true,
     hasBaseUrl: false,
     hasBedrock: false,
+    appliesTemperature: false,
   },
   openai: {
     label: "OpenAI",
     hasApiKey: true,
     hasBaseUrl: false,
     hasBedrock: false,
+    appliesTemperature: true,
   },
   openrouter: {
     label: "OpenRouter",
     hasApiKey: true,
     hasBaseUrl: false,
     hasBedrock: false,
+    appliesTemperature: true,
   },
   ollama: {
     label: "Ollama (ローカル)",
     hasApiKey: false,
     hasBaseUrl: true,
     hasBedrock: false,
+    appliesTemperature: true,
   },
   lmstudio: {
     label: "LM Studio (ローカル)",
     hasApiKey: false,
     hasBaseUrl: true,
     hasBedrock: false,
+    appliesTemperature: true,
   },
   kimi: {
     label: "Moonshot",
     hasApiKey: true,
     hasBaseUrl: false,
     hasBedrock: false,
+    appliesTemperature: true,
   },
   bedrock: {
     label: "AWS Bedrock",
     hasApiKey: false,
     hasBaseUrl: false,
     hasBedrock: true,
+    appliesTemperature: false,
   },
 };
 
@@ -480,12 +488,18 @@ function SettingsForm({ initialData }: { initialData: SettingsResponse }) {
               max={2}
               step={0.05}
               value={temperature}
+              disabled={!PROVIDER_META[activeProvider].appliesTemperature}
               onChange={(e) => {
                 setTemperature(parseFloat(e.target.value));
                 markDirty();
               }}
-              className="w-full"
+              className="w-full disabled:opacity-50 disabled:cursor-not-allowed"
             />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {PROVIDER_META[activeProvider].appliesTemperature
+                ? "一部のモデル（GPT-5 系、o 系、Kimi K2.6 など）には適用されません。"
+                : "Claude のモデルには Temperature を送信しないため、この設定は適用されません。"}
+            </p>
           </div>
         </div>
 

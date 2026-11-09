@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **spec-ai-writer / Removed project description field**: Removed the "description" field from the project creation form, leaving only the project name as required input (Issue #84 T6).
 - **spec-ai-writer / Dependency updates**: Updated Python (`uv lock --upgrade`) and frontend (`npm update`) dependencies to their latest versions. Notable updates include anthropic 0.109.2 → 0.120.2, openai 2.42.0 → 2.53.0, fastapi 0.137.1 → 0.141.1, starlette 1.3.1 → 1.4.1, and uvicorn 0.49.0 → 0.52.1.
 
+### Fixed
+
+- **spec-ai-writer / AI calls failing on Claude 4.7 and later**: Claude and AWS Bedrock requests no longer send `temperature`, which Claude 4.7 and later reject with a 400 error, and responses are now read from `text` blocks only so that models with thinking enabled work. There is no replacement setting, so the Temperature value and the lower value used for extraction no longer apply to Claude on any model; the Settings screen disables the slider for these providers (Issue #96).
+
 ### Security
 
 - **spec-ai-writer / Tightened CSP `connect-src`**: Narrowed the `connect-src` directive from `'self' ws: wss:` to `'self'`. The application does not use WebSocket, so the allowance for arbitrary `ws:`/`wss:` destinations was unnecessary and would have served as an exfiltration path if XSS ever occurred (Issue #91).
