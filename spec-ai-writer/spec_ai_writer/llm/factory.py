@@ -153,7 +153,7 @@ class LLMFactory:
             from .bedrock_client import BedrockClient
         except ImportError:
             raise ImportError(
-                "boto3 is required for Bedrock. Install with: pip install boto3"
+                "aiobotocore is required for Bedrock. Install with: pip install aiobotocore"
             )
         return BedrockClient(
             model=settings.bedrock_model_id,
