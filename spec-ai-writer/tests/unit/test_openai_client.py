@@ -14,7 +14,7 @@ class TestOpenAIClient:
         client = OpenAIClient(api_key="test-key", model=GPT4_TURBO, temperature=0.7)
         assert client.model == GPT4_TURBO
         assert client.temperature == 0.7
-        assert client.max_tokens == 4096
+        assert client.max_tokens == 16000
 
     def test_initialization_without_api_key(self):
         with pytest.raises(ValueError, match="API key is required"):
@@ -57,7 +57,7 @@ class TestOpenAIClient:
         mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
         mock_openai.return_value = mock_client
 
-        client = OpenAIClient(api_key="test-key")
+        client = OpenAIClient(api_key="test-key", temperature_supported=True)
         await client.chat([{"role": "user", "content": "Test"}], temperature=0.5)
 
         call_kwargs = mock_client.chat.completions.create.call_args.kwargs

@@ -17,10 +17,10 @@ class ClaudeClient(BaseLLMClient):
     def __init__(
         self,
         api_key: str,
-        model: str = "claude-haiku-4-5-20251001",
+        model: str = "claude-haiku-5-5",
         temperature: float = 0.7,
-        max_tokens: int = 4096,
-        timeout: float = 30.0,
+        max_tokens: int = 16000,
+        timeout: float = 120.0,
         effort: Optional[str] = None
     ):
         """

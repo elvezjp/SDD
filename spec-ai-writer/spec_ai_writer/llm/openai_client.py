@@ -25,14 +25,14 @@ class OpenAIClient(BaseLLMClient):
     def __init__(
         self,
         api_key: str,
-        model: str = "gpt-4o",
+        model: str = "gpt-6-luna",
         temperature: float = 0.7,
-        max_tokens: int = 4096,
-        timeout: float = 30.0,
+        max_tokens: int = 16000,
+        timeout: float = 120.0,
         base_url: Optional[str] = None,
         extra_body: Optional[dict] = None,
         max_tokens_param: str = "max_tokens",
-        temperature_supported: bool = True,
+        temperature_supported: bool = False,
         fixed_temperature: Optional[float] = None,
         effort: Optional[str] = None,
     ):

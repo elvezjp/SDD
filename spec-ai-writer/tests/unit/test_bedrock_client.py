@@ -50,7 +50,7 @@ class TestBedrockClient:
         body = _request_body(client)
         assert "temperature" not in body
         assert body["anthropic_version"] == "bedrock-2023-05-31"
-        assert body["max_tokens"] == 4096
+        assert body["max_tokens"] == 16000
 
     @pytest.mark.parametrize(
         "effort, expected", [("high", {"effort": "high"}), (None, None)]

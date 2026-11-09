@@ -391,7 +391,7 @@ class MockAPIClient {
     effort: "auto",
     providers: {
       claude: {
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-haiku-5-5",
         api_key_masked: "sk-a****mock",
         base_url: "",
         aws_access_key_id_masked: "",
@@ -399,7 +399,7 @@ class MockAPIClient {
         aws_region: "",
       },
       openai: {
-        model: "gpt-5-mini",
+        model: "gpt-6-luna",
         api_key_masked: "",
         base_url: "",
         aws_access_key_id_masked: "",
@@ -415,7 +415,7 @@ class MockAPIClient {
         aws_region: "",
       },
       ollama: {
-        model: "gemma3:4b",
+        model: "gemma4",
         api_key_masked: "",
         base_url: "http://localhost:11434/v1",
         aws_access_key_id_masked: "",
@@ -431,7 +431,7 @@ class MockAPIClient {
         aws_region: "",
       },
       kimi: {
-        model: "kimi-k2.6",
+        model: "kimi-k3",
         api_key_masked: "",
         base_url: "",
         aws_access_key_id_masked: "",
@@ -439,7 +439,7 @@ class MockAPIClient {
         aws_region: "",
       },
       bedrock: {
-        model: "jp.anthropic.claude-haiku-4-5",
+        model: "global.anthropic.claude-haiku-5-5",
         api_key_masked: "",
         base_url: "",
         aws_access_key_id_masked: "",

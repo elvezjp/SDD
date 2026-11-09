@@ -43,7 +43,7 @@ class TestClaudeClient:
         call_kwargs = mock_client.messages.create.call_args.kwargs
         assert "temperature" not in call_kwargs
         assert call_kwargs["model"] == model
-        assert call_kwargs["max_tokens"] == 4096
+        assert call_kwargs["max_tokens"] == 16000
 
     @pytest.mark.parametrize(
         "effort, expected", [("high", {"effort": "high"}), (None, None)]
