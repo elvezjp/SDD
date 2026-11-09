@@ -23,9 +23,9 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "anthropic>=0.18.0,<1",
-    "openai>=1.12.0",
-    "aiobotocore>=3.7.0",
+    "anthropic>=2.6.0,<3",
+    "openai>=3.46.0,<4",
+    "aiobotocore>=3.10.0",
     "click>=8.1.0",
     "questionary>=2.0.0",
     "jinja2>=3.1.0",
@@ -43,7 +43,7 @@ dev = [
     "pytest-mock>=3.12.0",
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=4.1.0",
-    "httpx>=0.26.0",
+    "httpx2>=2.0",
     "black>=26.10.1",
     "flake8>=6.0.0",
     "mypy>=1.0.0",
