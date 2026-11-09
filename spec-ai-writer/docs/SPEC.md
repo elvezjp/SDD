@@ -117,10 +117,11 @@ AIとの対話形式のインタビューにより、仕様駆動開発の仕様
 - 各プロバイダーの実装詳細：
   - **Claude**: `anthropic.AsyncAnthropic`（httpx2 ベース、非同期・キャンセル対応）
   - **OpenAI / OpenRouter / Ollama / LM Studio / Kimi**: `openai.AsyncOpenAI`（httpx2 ベース、非同期・キャンセル対応。`base_url` でエンドポイントを切り替え）
-  - **Bedrock**: `aiobotocore`（aiohttp ベース、非同期・キャンセル対応。`boto3` は使用しない）
+  - **Bedrock**: `aiobotocore`（aiohttp ベース、非同期・キャンセル対応。`boto3` は使用しない）。認証は Bedrock API キー、またはアクセスキーとシークレットキー（両方あるときは API キーを優先）
+- 生成パラメータ（`temperature`、`effort`）は、プロバイダーとモデルの組み合わせが対応している場合にだけ送信する。既定では `temperature` を送信しない
 - プロバイダー固有のパラメータ（Kimi の `thinking` フィールド、o1 系の `max_completion_tokens` など）は `llm/provider_registry.py` に宣言的に定義する。クライアントコードに条件分岐を書かない
 - プロバイダー固有のエラーを共通例外クラス（`LLMAuthenticationError`, `LLMConnectionError`, `LLMResponseError`）に変換し、呼び出し元でプロバイダーに依存しないエラー処理を行う
-- Settings API エンドポイント: `GET /api/settings`・`PUT /api/settings`（レスポンスに各フィールドの出所 `source: "json" | "env" | "default"` を含む）
+- Settings API エンドポイント: `GET /api/settings`・`PUT /api/settings`・`GET /api/settings/generation-params`（モデルが対応するパラメータを返す）（レスポンスに各フィールドの出所 `source: "json" | "env" | "default"` を含む）
 
 ### 7. Git自動コミット機能
 
@@ -168,8 +169,8 @@ AIとの対話形式のインタビューにより、仕様駆動開発の仕様
 
 ### 技術スタック
 
-- バックエンド：Python 3.9以上 / FastAPI / uv（パッケージ管理）
-- フロントエンド：Node.js 18以上 / Vite + React
+- バックエンド：Python 3.10以上 / FastAPI / uv（パッケージ管理）
+- フロントエンド：Node.js 22.22以上 / Vite + React
 - ブラウザ：Chrome、Firefox、Safari（最新版）
 
 ### セキュリティ
@@ -197,6 +198,7 @@ AIとの対話形式のインタビューにより、仕様駆動開発の仕様
 - **2026-06-11**: インタビュー入力フォームの複数行テキストエリア対応・AI応答中断ボタン・カラーテーマのブランドカラー統一を追加（Issue #84）
 - **2026-06-12**: LLMクライアントを非同期化（`async/await`）、Bedrock を `boto3` から `aiobotocore` に移行、クライアント切断時のLLMリクエスト中断を実装（Issue #85）
 - **2026-06-17**: LLMプロバイダーを7種類に拡張（Kimi・OpenRouter・Ollama・LM Studio 追加）。プロバイダー別独立スロット・source 追跡・Settings API エンドポイント統一（Issue #88）
+- **2026-11-09**: `anthropic` SDK 2.x・`openai` SDK 3.x に更新。モデルごとの生成パラメータの判定と `effort` の設定を追加。Bedrock API キーに対応。
 
 ---
 
