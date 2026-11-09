@@ -236,13 +236,10 @@ class InterviewEngine:
                 self.context_mgr.set_structured_data(phase_num, structured_data)
 
             return is_valid
-        except LLMAuthenticationError:
-            raise  # 認証エラーは上位に伝播
-        except LLMConnectionError:
-            raise  # 接続エラーは上位に伝播
-        except (LLMResponseError, Exception) as e:
-            logger.warning(f"フェーズ完了判定中にエラー: {e}")
-            return False
+        except Exception as e:
+            # 「未完了」として返すと、何度答えてもフェーズが終わらない（Issue #97）
+            logger.error(f"フェーズ{phase_num}の完了判定に失敗: {e}")
+            raise
 
     async def _extract_and_save_structured_data(self, phase_num: int) -> bool:
         """
@@ -360,18 +357,46 @@ class InterviewEngine:
             "previous_phases": self._load_previous_phase_specs(phase_num)
         }
 
+        return await self._request_question(
+            system_prompt, context, f"フェーズ{phase_num}「{phase_info.name}」の初回質問"
+        )
+
+    async def _request_question(
+        self,
+        system_prompt: str,
+        context: Dict[str, Any],
+        label: str
+    ) -> str:
+        """
+        Ask the LLM for a question, raising instead of substituting a canned one.
+
+        A canned question would look like a real one in the UI, so the user
+        could not tell that the LLM call failed (Issue #97).
+
+        Args:
+            system_prompt: System prompt for the phase
+            context: Context for question generation
+            label: What is being generated, used in log and error messages
+
+        Returns:
+            Question text (never empty)
+
+        Raises:
+            LLMAuthenticationError: If the API key is invalid
+            LLMConnectionError: If the LLM service is unreachable
+            LLMResponseError: If the call failed otherwise or the response was empty
+        """
         try:
             question = await self.llm.generate_question(system_prompt, context)
-            return question.strip() if question else phase_info.description
-        except LLMAuthenticationError as e:
-            logger.error(f"LLM認証エラー: {e}")
+        except Exception as e:
+            logger.error(f"{label}の生成に失敗: {e}")
             raise
-        except LLMConnectionError as e:
-            logger.error(f"LLM接続エラー: {e}")
-            raise
-        except (LLMResponseError, Exception) as e:
-            logger.warning(f"初回質問の生成に失敗、フォールバックを使用: {e}")
-            return f"フェーズ{phase_num}「{phase_info.name}」を開始します。\n\n{phase_info.description}\n\nまず、プロジェクトの概要を教えてください。"
+
+        question = (question or "").strip()
+        if not question:
+            logger.error(f"{label}の生成に失敗: LLM の応答が空でした")
+            raise LLMResponseError("LLM の応答が空でした")
+        return question
 
     async def _generate_follow_up_question(
         self,
@@ -391,16 +416,9 @@ class InterviewEngine:
         system_prompt = self._get_system_prompt_for_phase(phase_num)
         context = self._build_context_for_question(phase_num)
 
-        try:
-            question = await self.llm.generate_question(system_prompt, context)
-            return question.strip() if question else ""
-        except LLMAuthenticationError:
-            raise
-        except LLMConnectionError:
-            raise
-        except (LLMResponseError, Exception) as e:
-            logger.warning(f"フォローアップ質問の生成に失敗: {e}")
-            return "もう少し詳しく教えていただけますか？"
+        return await self._request_question(
+            system_prompt, context, f"フェーズ{phase_num}の次の質問"
+        )
 
     async def _is_phase_complete(
         self,

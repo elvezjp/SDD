@@ -232,6 +232,27 @@ class ContextManager:
         self.context["updated_at"] = datetime.now().isoformat()
         self.save_to_disk()
 
+    def undo_last_qa_pair(self, phase: int, pending_question: Optional[str]) -> None:
+        """
+        Remove the last Q&A pair of a phase and put its question back as pending.
+
+        Used when processing an answer fails, so that sending the same answer
+        again does not save it twice.
+
+        Args:
+            phase: Phase number (1-7)
+            pending_question: The question to restore as pending
+        """
+        phase_data = self.context["phases"].get(str(phase))
+        if not phase_data or not phase_data["qa_pairs"]:
+            return
+
+        phase_data["qa_pairs"].pop()
+        phase_data["pending_question"] = pending_question
+
+        self.context["updated_at"] = datetime.now().isoformat()
+        self.save_to_disk()
+
     def get_phase_context(self, phase_num: int) -> Dict[str, Any]:
         """
         Get the context for a specific phase.
