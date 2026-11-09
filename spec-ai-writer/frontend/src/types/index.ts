@@ -143,6 +143,7 @@ export interface SettingsResponse {
 export interface ProviderUpdate {
   model?: string;
   api_key?: string;
+  clear_api_key?: boolean;
   base_url?: string;
   aws_access_key_id?: string;
   aws_secret_access_key?: string;

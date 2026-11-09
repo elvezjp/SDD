@@ -142,10 +142,12 @@ class LLMFactory:
 
     @staticmethod
     def _create_bedrock_client(settings: Settings) -> BaseLLMClient:
-        if not settings.aws_access_key_id or not settings.aws_secret_access_key:
+        has_access_keys = settings.aws_access_key_id and settings.aws_secret_access_key
+        if not settings.aws_bearer_token_bedrock and not has_access_keys:
             raise ValueError(
-                "AWS credentials (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY) "
-                "are required for Bedrock. Set them in .env or via the Settings screen."
+                "A Bedrock API key (AWS_BEARER_TOKEN_BEDROCK) or AWS credentials "
+                "(AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY) are required for Bedrock. "
+                "Set them in .env or via the Settings screen."
             )
         try:
             from .bedrock_client import BedrockClient
@@ -155,6 +157,7 @@ class LLMFactory:
             )
         return BedrockClient(
             model=settings.bedrock_model_id,
+            api_key=settings.aws_bearer_token_bedrock or None,
             aws_access_key_id=settings.aws_access_key_id,
             aws_secret_access_key=settings.aws_secret_access_key,
             region=settings.aws_region,

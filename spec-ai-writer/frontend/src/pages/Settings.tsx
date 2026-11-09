@@ -157,6 +157,7 @@ function SettingsForm({ initialData }: { initialData: SettingsResponse }) {
   const [temperature, setTemperature] = useState<number>(
     () => initialData.temperature,
   );
+  const [clearBedrockKey, setClearBedrockKey] = useState(false);
   const [effort, setEffort] = useState<EffortSetting>(
     () => initialData.effort,
   );
@@ -179,6 +180,7 @@ function SettingsForm({ initialData }: { initialData: SettingsResponse }) {
       queryClient.setQueryData(["settings"], data);
       setDisplayData(data);
       setDirty(false);
+      setClearBedrockKey(false);
       setSaveNotice({
         kind: "success",
         message: "設定を保存し、即座に反映しました。",
@@ -222,6 +224,8 @@ function SettingsForm({ initialData }: { initialData: SettingsResponse }) {
     // model/base_url/aws_region: always send (even empty = delete from JSON → revert to default)
     providerUpdate.model = slot.model;
     if (slot.apiKey) providerUpdate.api_key = slot.apiKey;
+    if (activeProvider === "bedrock" && clearBedrockKey)
+      providerUpdate.clear_api_key = true;
     if (
       slot.baseUrl !== undefined &&
       PROVIDER_META[activeProvider].hasBaseUrl
@@ -254,6 +258,8 @@ function SettingsForm({ initialData }: { initialData: SettingsResponse }) {
     queryFn: () => apiClient.getGenerationParams(activeProvider, slot.model),
     placeholderData: keepPreviousData,
   });
+  const bedrockKeySaved = Boolean(prov?.api_key_masked) && !clearBedrockKey;
+  const bedrockUsesApiKey = Boolean(slot.apiKey) || bedrockKeySaved;
   const temperatureSupported = generationParams?.temperature_supported ?? true;
   const effortLevels = generationParams?.effort_levels ?? [];
   const meta = PROVIDER_META[activeProvider];
@@ -414,6 +420,44 @@ function SettingsForm({ initialData }: { initialData: SettingsResponse }) {
           {/* Bedrock fields */}
           {meta.hasBedrock && (
             <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Bedrock API キー
+                  {src("bedrock.api_key") === "env" && <EnvBadge />}
+                </label>
+                <input
+                  type="password"
+                  value={slot.apiKey}
+                  onChange={(e) => {
+                    updateSlot("bedrock", { apiKey: e.target.value });
+                    setClearBedrockKey(false);
+                  }}
+                  placeholder={
+                    bedrockKeySaved
+                      ? `${prov?.api_key_masked}（変更する場合のみ入力）`
+                      : "新しい Bedrock API キーを入力"
+                  }
+                  className="input w-full"
+                  autoComplete="off"
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {bedrockUsesApiKey
+                    ? "Bedrock API キーで認証します。アクセスキーは使われません。"
+                    : "Bedrock API キーがない場合は、アクセスキーで認証します。"}
+                </p>
+                {bedrockKeySaved && src("bedrock.api_key") !== "env" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setClearBedrockKey(true);
+                      markDirty();
+                    }}
+                    className="mt-1 text-xs text-red-600 hover:underline dark:text-red-400"
+                  >
+                    保存済みの API キーを削除
+                  </button>
+                )}
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   リージョン

@@ -75,6 +75,7 @@ class GenerationParamsResponse(BaseModel):
 class ProviderUpdate(BaseModel):
     model: Optional[str] = None
     api_key: Optional[str] = Field(default=None, repr=False)
+    clear_api_key: Optional[bool] = None
     base_url: Optional[str] = None
     aws_access_key_id: Optional[str] = Field(default=None, repr=False)
     aws_secret_access_key: Optional[str] = Field(default=None, repr=False)
@@ -167,11 +168,13 @@ def _build_response() -> SettingsResponse:
         elif name == "bedrock":
             providers[name] = ProviderSettingsResponse(
                 model=s.bedrock_model_id,
+                api_key_masked=_mask(s.aws_bearer_token_bedrock),
                 aws_access_key_id_masked=_mask(s.aws_access_key_id),
                 aws_secret_access_key_masked=_mask(s.aws_secret_access_key),
                 aws_region=s.aws_region,
             )
             source_map["bedrock.model"]                  = srcs.get("bedrock_model_id", "default")
+            source_map["bedrock.api_key"]                = srcs.get("aws_bearer_token_bedrock", "default")
             source_map["bedrock.aws_access_key_id"]      = srcs.get("aws_access_key_id", "default")
             source_map["bedrock.aws_secret_access_key"]  = srcs.get("aws_secret_access_key", "default")
             source_map["bedrock.aws_region"]             = srcs.get("aws_region", "default")
@@ -220,6 +223,9 @@ def _merge_settings(existing: dict[str, Any], req: SettingsUpdateRequest) -> dic
                     existing_slot["aws_region"] = pu.aws_region
                 else:
                     existing_slot.pop("aws_region", None)
+
+            if pu.clear_api_key:
+                existing_slot.pop("api_key", None)
 
             # Secret fields: empty string = "no change" (avoid accidental erasure).
             if pu.api_key:

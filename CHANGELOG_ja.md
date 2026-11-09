@@ -13,6 +13,7 @@
 
 ### 追加
 
+- **spec-ai-writer / Bedrock API キーに対応**: AWS Bedrock を Bedrock API キーで認証できるようにしました。アクセスキーと両方あるときは API キーを使います（Issue #115）。
 - **spec-ai-writer / Effort の設定**: 設定画面の「生成パラメータ」で Effort を選べるようにしました。初期値は「自動（モデルの既定）」です。Temperature と Effort は、選んでいるプロバイダとモデルが対応している場合にだけ設定でき、対応していないモデルには送信しません（Issue #113）。
 
 ### 変更

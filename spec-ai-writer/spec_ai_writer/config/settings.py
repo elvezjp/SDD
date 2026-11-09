@@ -81,6 +81,9 @@ class Settings(BaseSettings):
     )
 
     # --- AWS Bedrock ---
+    aws_bearer_token_bedrock: str = Field(
+        default="", description="Bedrock API key (AWS_BEARER_TOKEN_BEDROCK)"
+    )
     aws_access_key_id: str = Field(default="", description="AWS Access Key ID")
     aws_secret_access_key: str = Field(default="", description="AWS Secret Access Key")
     aws_region: str = Field(default="ap-northeast-1", description="AWS region")
@@ -141,8 +144,9 @@ class Settings(BaseSettings):
             if not self.kimi_api_key:
                 errors.append("KIMI_API_KEY is required for Kimi provider")
         elif p == "bedrock":
-            if not self.aws_access_key_id or not self.aws_secret_access_key:
-                errors.append("AWS credentials are required for Bedrock provider")
+            has_access_keys = self.aws_access_key_id and self.aws_secret_access_key
+            if not self.aws_bearer_token_bedrock and not has_access_keys:
+                errors.append("A Bedrock API key or AWS credentials are required for Bedrock provider")
         else:
             errors.append(
                 f"Unknown LLM provider: {p}. "
@@ -180,6 +184,7 @@ _OVERLAY_FIELDS: frozenset[str] = frozenset(
         "kimi_api_key",
         "kimi_model",
         # Bedrock
+        "aws_bearer_token_bedrock",
         "aws_access_key_id",
         "aws_secret_access_key",
         "aws_region",
@@ -231,6 +236,7 @@ def _nested_to_flat(json_data: dict[str, Any]) -> dict[str, Any]:
 
     bedrock = providers.get("bedrock", {})
     _pick(bedrock, "model", "bedrock_model_id")
+    _pick(bedrock, "api_key", "aws_bearer_token_bedrock")
     _pick(bedrock, "aws_access_key_id", "aws_access_key_id")
     _pick(bedrock, "aws_secret_access_key", "aws_secret_access_key")
     _pick(bedrock, "aws_region", "aws_region")

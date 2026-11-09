@@ -2,7 +2,8 @@
 
 import pytest
 from spec_ai_writer.config.settings import Settings
-from spec_ai_writer.llm.factory import _requested_effort
+from spec_ai_writer.llm.bedrock_client import BedrockClient
+from spec_ai_writer.llm.factory import LLMFactory, _requested_effort
 from spec_ai_writer.llm.provider_registry import get_model_config
 
 CLAUDE_ALL = ("low", "medium", "high", "xhigh", "max")
@@ -82,3 +83,30 @@ class TestRequestedEffort:
     def test_only_supported_levels_are_sent(self, effort, provider, model, expected):
         settings = Settings(effort=effort)
         assert _requested_effort(settings, provider, model) == expected
+
+
+@pytest.mark.unit
+class TestBedrockCredentials:
+    @staticmethod
+    def _settings(token="", key="", secret=""):
+        return Settings(
+            default_llm_provider="bedrock",
+            aws_bearer_token_bedrock=token,
+            aws_access_key_id=key,
+            aws_secret_access_key=secret,
+        )
+
+    @pytest.mark.parametrize(
+        "credentials", [{"token": "test-api-key"}, {"key": "AKIATEST", "secret": "test-secret"}]
+    )
+    def test_either_credential_is_enough(self, credentials):
+        settings = self._settings(**credentials)
+        assert isinstance(LLMFactory.create_client(settings=settings), BedrockClient)
+        assert settings.validate_llm_config()[0] is True
+
+    @pytest.mark.parametrize("credentials", [{}, {"key": "AKIATEST"}])
+    def test_missing_credentials_are_rejected(self, credentials):
+        settings = self._settings(**credentials)
+        with pytest.raises(ValueError, match="Bedrock API key"):
+            LLMFactory.create_client(settings=settings)
+        assert settings.validate_llm_config()[0] is False

@@ -215,7 +215,7 @@ async def start_interview(request: InterviewStartRequest):
         logger.error(f"LLM authentication error: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="LLM APIキーが無効です。管理者に連絡してください。"
+            detail="LLM APIキーが無効、または、モデルの利用が許可されていません。管理者に連絡してください。"
         )
     except LLMConnectionError as e:
         logger.error(f"LLM connection error: {e}")
@@ -398,7 +398,7 @@ async def submit_answer(http_request: Request, request: UserAnswerRequest):
         logger.error(f"LLM authentication error: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="LLM APIキーが無効です。管理者に連絡してください。"
+            detail="LLM APIキーが無効、または、モデルの利用が許可されていません。管理者に連絡してください。"
         )
     except LLMConnectionError as e:
         logger.error(f"LLM connection error: {e}")
