@@ -5,6 +5,7 @@ Endpoints for conducting interviews via REST.
 """
 
 import logging
+from typing import Optional
 
 import anyio
 
@@ -18,6 +19,7 @@ from spec_ai_writer.llm.factory import LLMFactory
 from spec_ai_writer.llm.exceptions import (
     LLMAuthenticationError,
     LLMConnectionError,
+    LLMResponseError,
 )
 from ..models import (
     InterviewStartRequest,
@@ -84,13 +86,19 @@ def _reconstruct_chat_history(context: ContextManager) -> list:
 
 async def _run_with_disconnect_guard(request: Request, coro):
     """LLM コルーチンとクライアント切断監視を競争させ、切断時にLLMタスクをキャンセルする。
-    切断が検知された場合は None を返す。"""
+    切断が検知された場合は None を返す。
+    LLM コルーチンの例外はそのまま送出する（タスクグループの ExceptionGroup に包まれると、
+    呼び出し側の except LLMAuthenticationError などに当たらず 500 になるため）。"""
     result = None
+    error: Optional[Exception] = None
     disconnected = False
 
     async def _llm_work(scope: anyio.CancelScope) -> None:
-        nonlocal result
-        result = await coro
+        nonlocal result, error
+        try:
+            result = await coro
+        except Exception as e:
+            error = e
         scope.cancel()
 
     async def _watch(scope: anyio.CancelScope) -> None:
@@ -115,6 +123,8 @@ async def _run_with_disconnect_guard(request: Request, coro):
     if disconnected:
         logger.warning("Disconnect LLM Request")
         return None
+    if error is not None:
+        raise error
     return result
 
 
@@ -279,17 +289,30 @@ async def submit_answer(http_request: Request, request: UserAnswerRequest):
                 qa_count=len(existing_qa),
             )
 
+        # An answer needs a question. Without this guard, an answer sent after
+        # question generation failed would be saved with an empty question.
+        question = context.get_pending_question(current_phase)
+        if not question:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="回答する質問がまだありません。ページを再読み込みすると、質問をもう一度作ります。"
+            )
+
         # Save the Q&A pair to persistent storage
-        question = context.get_pending_question(current_phase) or ""
         context.add_qa_pair(current_phase, question, request.answer)
 
         phase_context = context.get_phase_context(current_phase)
         qa_pairs = phase_context.get("qa_pairs", [])
 
         # Check if phase is complete
-        phase_complete = await _run_with_disconnect_guard(
-            http_request, engine._is_phase_complete(current_phase, context)
-        )
+        try:
+            phase_complete = await _run_with_disconnect_guard(
+                http_request, engine._is_phase_complete(current_phase, context)
+            )
+        except Exception:
+            # Undo the save so that sending the same answer again is not saved twice
+            context.undo_last_qa_pair(current_phase, question)
+            raise
         if phase_complete is None:
             raise HTTPException(status_code=499, detail="Client disconnected")
 
@@ -307,9 +330,23 @@ async def submit_answer(http_request: Request, request: UserAnswerRequest):
                 logger.warning(f"Failed to generate spec: {e}")
 
             if current_phase < 7:
-                next_question = await _run_with_disconnect_guard(
-                    http_request, engine._generate_initial_question(current_phase + 1)
-                )
+                try:
+                    next_question = await _run_with_disconnect_guard(
+                        http_request, engine._generate_initial_question(current_phase + 1)
+                    )
+                except (LLMAuthenticationError, LLMConnectionError, LLMResponseError) as e:
+                    # The phase is already complete, so the answer cannot be undone.
+                    # Reloading the page generates the first question of the next phase.
+                    logger.error(f"LLM error after completing phase {current_phase}: {e}")
+                    raise HTTPException(
+                        status_code=status.HTTP_502_BAD_GATEWAY,
+                        detail=(
+                            f"フェーズ {current_phase} は完了しました。"
+                            "次のフェーズの最初の質問を、LLM から受け取れませんでした。"
+                            "ページを再読み込みすると、質問をもう一度作ります。"
+                            f"（原因: {e}）"
+                        )
+                    )
                 if next_question is None:
                     raise HTTPException(status_code=499, detail="Client disconnected")
                 context.set_pending_question(current_phase + 1, next_question)
@@ -328,9 +365,13 @@ async def submit_answer(http_request: Request, request: UserAnswerRequest):
                 )
         else:
             # Generate next question and persist it so resume works correctly
-            next_question = await _run_with_disconnect_guard(
-                http_request, engine._generate_follow_up_question(current_phase, context)
-            )
+            try:
+                next_question = await _run_with_disconnect_guard(
+                    http_request, engine._generate_follow_up_question(current_phase, context)
+                )
+            except Exception:
+                context.undo_last_qa_pair(current_phase, question)
+                raise
             if next_question is None:
                 raise HTTPException(status_code=499, detail="Client disconnected")
             context.set_pending_question(current_phase, next_question)
@@ -365,6 +406,18 @@ async def submit_answer(http_request: Request, request: UserAnswerRequest):
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="LLMサービスに接続できません。ネットワーク接続を確認してください。"
         )
+    except LLMResponseError as e:
+        logger.error(f"LLM response error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=(
+                "LLM から応答を受け取れませんでした。"
+                "設定画面でプロバイダとモデルを確認し、もう一度お試しください。"
+                f"（原因: {e}）"
+            )
+        )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to process answer: {e}")
         raise HTTPException(
