@@ -4,7 +4,13 @@ import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from botocore.exceptions import ClientError, EndpointConnectionError
 from spec_ai_writer.llm.bedrock_client import BedrockClient
+from spec_ai_writer.llm.exceptions import (
+    LLMAuthenticationError,
+    LLMConnectionError,
+    LLMResponseError,
+)
 
 
 def _mock_session(mock_get_session, content):
@@ -20,6 +26,10 @@ def _mock_session(mock_get_session, content):
     context.__aexit__ = AsyncMock(return_value=False)
     mock_get_session.return_value.create_client.return_value = context
     return client
+
+
+def _client_error(code):
+    return ClientError({"Error": {"Code": code, "Message": "failed"}}, "InvokeModel")
 
 
 def _request_body(client):
@@ -71,3 +81,41 @@ class TestBedrockClient:
         assert body["messages"] == [
             {"role": "user", "content": [{"type": "text", "text": "hi"}]}
         ]
+
+    @patch("spec_ai_writer.llm.bedrock_client.aiobotocore.session.get_session")
+    async def test_chat_returns_text_and_uses_model_id(self, mock_get_session):
+        client = _mock_session(
+            mock_get_session,
+            [{"type": "text", "text": "前半"}, {"type": "text", "text": "後半"}],
+        )
+
+        bedrock = BedrockClient(model="anthropic.test-model-v1:0")
+        response = await bedrock.chat([{"role": "user", "content": "hi"}])
+
+        assert response == "前半後半"
+        assert client.invoke_model.call_args.kwargs["modelId"] == "anthropic.test-model-v1:0"
+
+    @pytest.mark.parametrize(
+        "error, expected",
+        [
+            (_client_error("AccessDeniedException"), LLMAuthenticationError),
+            (_client_error("UnrecognizedClientException"), LLMAuthenticationError),
+            (_client_error("ThrottlingException"), LLMResponseError),
+            (EndpointConnectionError(endpoint_url="https://example.com"), LLMConnectionError),
+            (RuntimeError("unexpected"), LLMResponseError),
+        ],
+    )
+    @patch("spec_ai_writer.llm.bedrock_client.aiobotocore.session.get_session")
+    async def test_chat_converts_errors(self, mock_get_session, error, expected):
+        client = _mock_session(mock_get_session, [])
+        client.invoke_model.side_effect = error
+
+        with pytest.raises(expected):
+            await BedrockClient().chat([{"role": "user", "content": "hi"}])
+
+
+@pytest.mark.unit
+class TestBedrockClientWithRealSdk:
+    def test_client_can_be_created(self):
+        """Not mocked on purpose: fails when an SDK update breaks client creation."""
+        assert BedrockClient(region="us-west-2").model
