@@ -1,6 +1,7 @@
 """Unit tests for Bedrock client."""
 
 import json
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -148,3 +149,56 @@ class TestBedrockClientWithRealSdk:
     def test_client_can_be_created(self):
         """Not mocked on purpose: fails when an SDK update breaks client creation."""
         assert BedrockClient(region="us-west-2").model
+
+
+class _Captured(Exception):
+    """Stops the request before it leaves the process."""
+
+
+async def _sent_authorization(client):
+    seen = {}
+
+    def grab(request, **_kwargs):
+        header = request.headers.get("Authorization", b"")
+        seen["value"] = header.decode() if isinstance(header, bytes) else header
+        raise _Captured()
+
+    client._session.register("before-send.bedrock-runtime.InvokeModel", grab)
+    with pytest.raises(LLMResponseError):
+        await client.chat([{"role": "user", "content": "hi"}])
+    return seen["value"]
+
+
+@pytest.mark.unit
+class TestBedrockAuthentication:
+    """Not mocked on purpose: checks the header the real SDK builds, without any network call."""
+
+    @pytest.fixture(autouse=True)
+    def isolated_aws_environment(self, monkeypatch, tmp_path):
+        for name in ("AWS_BEARER_TOKEN_BEDROCK", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_PROFILE"):
+            monkeypatch.delenv(name, raising=False)
+        monkeypatch.setenv("AWS_EC2_METADATA_DISABLED", "true")
+        monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(tmp_path / "none"))
+        monkeypatch.setenv("AWS_CONFIG_FILE", str(tmp_path / "none"))
+
+    async def test_api_key_only(self):
+        header = await _sent_authorization(BedrockClient(api_key="test-api-key"))
+        assert header == "Bearer test-api-key"
+
+    async def test_api_key_takes_precedence_over_access_keys(self):
+        client = BedrockClient(
+            api_key="test-api-key",
+            aws_access_key_id="AKIATESTTESTTESTTEST",
+            aws_secret_access_key="test-secret",
+        )
+        assert await _sent_authorization(client) == "Bearer test-api-key"
+
+    async def test_access_keys_only(self):
+        client = BedrockClient(
+            aws_access_key_id="AKIATESTTESTTESTTEST", aws_secret_access_key="test-secret"
+        )
+        assert (await _sent_authorization(client)).startswith("AWS4-HMAC-SHA256")
+
+    async def test_api_key_does_not_touch_process_environment(self):
+        await _sent_authorization(BedrockClient(api_key="test-api-key"))
+        assert "AWS_BEARER_TOKEN_BEDROCK" not in os.environ

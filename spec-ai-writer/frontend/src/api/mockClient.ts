@@ -490,6 +490,7 @@ class MockAPIClient {
         if (update.base_url !== undefined) current.base_url = update.base_url;
         if (update.aws_region !== undefined)
           current.aws_region = update.aws_region;
+        if (update.clear_api_key) current.api_key_masked = "";
         if (update.api_key)
           current.api_key_masked = `${update.api_key.slice(0, 4)}****mock`;
         if (update.aws_access_key_id)

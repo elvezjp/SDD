@@ -13,6 +13,7 @@ try:
     import aiobotocore.session
     from botocore.config import Config as BotoConfig
     from botocore.exceptions import BotoCoreError, ClientError
+    from botocore.tokens import ScopedEnvTokenProvider, TokenProviderChain
     AIOBOTOCORE_AVAILABLE = True
 except ImportError:
     AIOBOTOCORE_AVAILABLE = False
@@ -37,6 +38,7 @@ class BedrockClient(BaseLLMClient):
         region: str = "us-west-2",
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
+        api_key: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
         timeout: float = 30.0,
@@ -50,6 +52,7 @@ class BedrockClient(BaseLLMClient):
             region: AWS region (e.g., "us-west-2", "us-east-1")
             aws_access_key_id: AWS access key (optional, can use IAM role)
             aws_secret_access_key: AWS secret key (optional, can use IAM role)
+            api_key: Bedrock API key. Takes precedence over the AWS credentials
             temperature: Accepted for interface compatibility; not sent to the API
             max_tokens: Maximum tokens to generate
             timeout: Timeout in seconds for API calls
@@ -71,14 +74,30 @@ class BedrockClient(BaseLLMClient):
 
         # Store client kwargs; the actual HTTP client is created per chat() call
         self._session = aiobotocore.session.get_session()
+        config_kwargs: Dict[str, Any] = {
+            "read_timeout": int(self.timeout),
+            "connect_timeout": int(self.timeout),
+        }
+        if api_key:
+            # Scoped to this client so that AWS_BEARER_TOKEN_BEDROCK in the process
+            # environment is neither required nor modified.
+            self._session.register_component(
+                "token_provider",
+                TokenProviderChain(
+                    providers=[
+                        ScopedEnvTokenProvider(
+                            self._session, environ={"AWS_BEARER_TOKEN_BEDROCK": api_key}
+                        )
+                    ]
+                ),
+            )
+            config_kwargs["auth_scheme_preference"] = "httpBearerAuth"
+
         self._client_kwargs: Dict[str, Any] = {
             "region_name": region,
-            "config": BotoConfig(
-                read_timeout=int(self.timeout),
-                connect_timeout=int(self.timeout),
-            ),
+            "config": BotoConfig(**config_kwargs),
         }
-        if aws_access_key_id and aws_secret_access_key:
+        if not api_key and aws_access_key_id and aws_secret_access_key:
             self._client_kwargs["aws_access_key_id"] = aws_access_key_id
             self._client_kwargs["aws_secret_access_key"] = aws_secret_access_key
 

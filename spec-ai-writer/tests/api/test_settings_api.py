@@ -202,3 +202,26 @@ class TestGenerationParamsAPI:
 
     def test_put_rejects_invalid_effort(self, client):
         assert client.put("/api/settings/", json={"effort": "extreme"}).status_code == 422
+
+
+@pytest.mark.api
+class TestBedrockApiKeySetting:
+    def _bedrock(self, client):
+        return client.get("/api/settings/").json()["providers"]["bedrock"]
+
+    def test_saved_key_is_masked(self, client):
+        payload = {"providers": {"bedrock": {"api_key": "bedrock-secret-key-1234"}}}
+        assert client.put("/api/settings/", json=payload).status_code == 200
+        masked = self._bedrock(client)["api_key_masked"]
+        assert masked == "bedr****1234"
+        assert "secret" not in masked
+
+    def test_empty_value_keeps_saved_key(self, client):
+        client.put("/api/settings/", json={"providers": {"bedrock": {"api_key": "bedrock-secret-key-1234"}}})
+        client.put("/api/settings/", json={"providers": {"bedrock": {"api_key": ""}}})
+        assert self._bedrock(client)["api_key_masked"]
+
+    def test_clear_removes_saved_key(self, client):
+        client.put("/api/settings/", json={"providers": {"bedrock": {"api_key": "bedrock-secret-key-1234"}}})
+        client.put("/api/settings/", json={"providers": {"bedrock": {"clear_api_key": True}}})
+        assert self._bedrock(client)["api_key_masked"] == ""

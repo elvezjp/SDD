@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **spec-ai-writer / Bedrock API key support**: AWS Bedrock can now authenticate with a Bedrock API key, which takes precedence over access keys when both are set (Issue #115).
 - **spec-ai-writer / Effort setting**: Added an Effort option to the generation parameters on the Settings screen, defaulting to "Auto (model default)". Temperature and Effort can be set only when the selected provider and model support them, and are not sent otherwise (Issue #113).
 
 ### Changed
