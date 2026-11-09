@@ -4,7 +4,13 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from anthropic import APIConnectionError, APITimeoutError, AsyncAnthropic, AuthenticationError
 from spec_ai_writer.llm.claude_client import ClaudeClient
+from spec_ai_writer.llm.exceptions import (
+    LLMAuthenticationError,
+    LLMConnectionError,
+    LLMResponseError,
+)
 
 
 def _response(*blocks):
@@ -69,3 +75,45 @@ class TestClaudeClient:
         call_kwargs = mock_client.messages.create.call_args.kwargs
         assert call_kwargs["system"] == "You are an interviewer"
         assert call_kwargs["messages"] == [{"role": "user", "content": "hi"}]
+
+    @patch("spec_ai_writer.llm.claude_client.AsyncAnthropic")
+    async def test_chat_returns_text(self, mock_anthropic):
+        mock_client = Mock()
+        mock_client.messages.create = AsyncMock(
+            return_value=_response(_text("前半"), _text("後半"))
+        )
+        mock_anthropic.return_value = mock_client
+
+        client = ClaudeClient(api_key="test-key")
+        assert await client.chat([{"role": "user", "content": "hi"}]) == "前半後半"
+
+    @pytest.mark.parametrize(
+        "sdk_error, expected",
+        [
+            (
+                AuthenticationError(
+                    "invalid", response=Mock(status_code=401, headers={}), body=None
+                ),
+                LLMAuthenticationError,
+            ),
+            (APIConnectionError(message="down", request=Mock()), LLMConnectionError),
+            (APITimeoutError(request=Mock()), LLMConnectionError),
+            (RuntimeError("unexpected"), LLMResponseError),
+        ],
+    )
+    @patch("spec_ai_writer.llm.claude_client.AsyncAnthropic")
+    async def test_chat_converts_errors(self, mock_anthropic, sdk_error, expected):
+        mock_client = Mock()
+        mock_client.messages.create = AsyncMock(side_effect=sdk_error)
+        mock_anthropic.return_value = mock_client
+
+        with pytest.raises(expected):
+            await ClaudeClient(api_key="test-key").chat([{"role": "user", "content": "hi"}])
+
+
+@pytest.mark.unit
+class TestClaudeClientWithRealSdk:
+    def test_client_can_be_created(self):
+        """Not mocked on purpose: fails when an SDK update breaks client creation."""
+        client = ClaudeClient(api_key="test-key")
+        assert isinstance(client.client, AsyncAnthropic)

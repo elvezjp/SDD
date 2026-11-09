@@ -23,7 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "anthropic>=0.18.0",
+    "anthropic>=0.18.0,<1",
     "openai>=1.12.0",
     "aiobotocore>=3.7.0",
     "click>=8.1.0",

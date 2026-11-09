@@ -2109,7 +2109,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiobotocore", specifier = ">=3.7.0" },
-    { name = "anthropic", specifier = ">=0.18.0" },
+    { name = "anthropic", specifier = ">=0.18.0,<1" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=26.10.1" },
     { name = "click", specifier = ">=8.1.0" },
     { name = "fastapi", specifier = ">=0.109.0" },
