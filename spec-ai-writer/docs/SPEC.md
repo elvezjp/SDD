@@ -115,8 +115,8 @@ AIとの対話形式のインタビューにより、仕様駆動開発の仕様
 - 設定の読み込み優先順位: `data/settings.json`（UI が書き込む）> 環境変数 / `.env` > pydantic デフォルト値
 - 共通の `BaseLLMClient` インターフェースでプロバイダー差異を吸収する
 - 各プロバイダーの実装詳細：
-  - **Claude**: `anthropic.AsyncAnthropic`（httpx ベース、非同期・キャンセル対応）
-  - **OpenAI / OpenRouter / Ollama / LM Studio / Kimi**: `openai.AsyncOpenAI`（httpx ベース、非同期・キャンセル対応。`base_url` でエンドポイントを切り替え）
+  - **Claude**: `anthropic.AsyncAnthropic`（httpx2 ベース、非同期・キャンセル対応）
+  - **OpenAI / OpenRouter / Ollama / LM Studio / Kimi**: `openai.AsyncOpenAI`（httpx2 ベース、非同期・キャンセル対応。`base_url` でエンドポイントを切り替え）
   - **Bedrock**: `aiobotocore`（aiohttp ベース、非同期・キャンセル対応。`boto3` は使用しない）
 - プロバイダー固有のパラメータ（Kimi の `thinking` フィールド、o1 系の `max_completion_tokens` など）は `llm/provider_registry.py` に宣言的に定義する。クライアントコードに条件分岐を書かない
 - プロバイダー固有のエラーを共通例外クラス（`LLMAuthenticationError`, `LLMConnectionError`, `LLMResponseError`）に変換し、呼び出し元でプロバイダーに依存しないエラー処理を行う

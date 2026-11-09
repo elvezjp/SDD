@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from openai import AsyncOpenAI
 from spec_ai_writer.llm.openai_client import GPT4_TURBO, GPT35_TURBO, OpenAIClient
 
 
@@ -185,3 +186,11 @@ class TestOpenAIClient:
             },
         )
         assert data["project_name"] == "test"
+
+
+@pytest.mark.unit
+class TestOpenAIClientWithRealSdk:
+    def test_client_can_be_created(self):
+        """Not mocked on purpose: fails when an SDK update breaks client creation."""
+        client = OpenAIClient(api_key="test-key", base_url="http://localhost:11434/v1")
+        assert isinstance(client.client, AsyncOpenAI)

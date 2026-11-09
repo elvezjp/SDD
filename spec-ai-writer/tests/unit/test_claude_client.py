@@ -117,3 +117,7 @@ class TestClaudeClientWithRealSdk:
         """Not mocked on purpose: fails when an SDK update breaks client creation."""
         client = ClaudeClient(api_key="test-key")
         assert isinstance(client.client, AsyncAnthropic)
+
+    def test_client_uses_current_api_version(self):
+        client = ClaudeClient(api_key="test-key")
+        assert client.client.default_headers["anthropic-version"] == "2026-10-21"

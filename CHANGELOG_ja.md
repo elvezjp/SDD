@@ -11,6 +11,10 @@
 
 ## [Unreleased]
 
+### 変更
+
+- **spec-ai-writer / LLM クライアントの SDK を更新**: `anthropic` を 2.x、`openai` を 3.x に更新しました。Claude には API バージョン `2026-10-21` で接続し、API キーは `Authorization` ヘッダーで送ります（Issue #112）。
+
 ---
 
 ## [1.0.6] - 2026-11-09

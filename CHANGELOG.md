@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **spec-ai-writer / Updated LLM client SDKs**: Updated `anthropic` to 2.x and `openai` to 3.x. Claude requests now use API version `2026-10-21` and send the API key in the `Authorization` header (Issue #112).
+
 ---
 
 ## [1.0.6] - 2026-11-09

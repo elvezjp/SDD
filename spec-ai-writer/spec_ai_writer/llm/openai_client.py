@@ -3,8 +3,6 @@
 import logging
 from typing import Dict, List, Optional
 
-import httpx
-
 try:
     from openai import AsyncOpenAI, AuthenticationError, APIConnectionError, APITimeoutError
     OPENAI_AVAILABLE = True
@@ -68,7 +66,7 @@ class OpenAIClient(BaseLLMClient):
         self.temperature_supported = temperature_supported
         self.fixed_temperature = fixed_temperature
 
-        client_kwargs: dict = {"api_key": api_key, "timeout": httpx.Timeout(self.timeout)}
+        client_kwargs: dict = {"api_key": api_key, "timeout": self.timeout}
         if base_url:
             client_kwargs["base_url"] = base_url
         self.client = AsyncOpenAI(**client_kwargs)

@@ -3,7 +3,6 @@
 import logging
 from typing import Dict, List, Optional
 
-import httpx
 from anthropic import AsyncAnthropic, AuthenticationError, APIConnectionError, APITimeoutError
 
 from .base import BaseLLMClient
@@ -35,7 +34,7 @@ class ClaudeClient(BaseLLMClient):
         """
         super().__init__(api_key, model, temperature, timeout=timeout)
         self.max_tokens = max_tokens
-        self.client = AsyncAnthropic(api_key=api_key, timeout=httpx.Timeout(self.timeout))
+        self.client = AsyncAnthropic(api_key=api_key, timeout=self.timeout)
 
     async def chat(
         self,
