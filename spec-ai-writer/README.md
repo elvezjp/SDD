@@ -88,41 +88,46 @@ DEFAULT_LLM_PROVIDER=claude
 
 # Claude (Anthropic)
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
-CLAUDE_MODEL=claude-haiku-4-5-20251001
+CLAUDE_MODEL=claude-haiku-5-5
 
 # OpenAI
 OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_MODEL=gpt-5-mini
+OPENAI_MODEL=gpt-6-luna
 
 # OpenRouter
 OPENROUTER_API_KEY=your_openrouter_api_key_here
-OPENROUTER_MODEL=anthropic/claude-3.5-sonnet
+OPENROUTER_MODEL=nvidia/nemotron-3.5-lightning:free
 
 # Ollama（ローカル LLM）
-OLLAMA_MODEL=gemma3:4b
+OLLAMA_MODEL=gemma4
 # OLLAMA_BASE_URL=   # 空欄 = http://localhost:11434/v1
 
 # LM Studio（ローカル LLM）
-LMSTUDIO_MODEL=local-model
+LMSTUDIO_MODEL=google/gemma-4
 # LMSTUDIO_BASE_URL= # 空欄 = http://localhost:1234/v1
 
 # Moonshot Kimi
 KIMI_API_KEY=your_kimi_api_key_here
-KIMI_MODEL=kimi-k2.6
+KIMI_MODEL=kimi-k3
 
-# AWS Bedrock
+# AWS Bedrock（Bedrock API キーか、アクセスキーのどちらかを設定）
+# AWS_BEARER_TOKEN_BEDROCK=your_bedrock_api_key_here
 AWS_ACCESS_KEY_ID=your_aws_access_key_here
 AWS_SECRET_ACCESS_KEY=your_aws_secret_key_here
 AWS_REGION=ap-northeast-1
+BEDROCK_MODEL_ID=global.anthropic.claude-haiku-5-5
 
 # 共通設定
 TEMPERATURE=0.7
+EFFORT=auto
 DATA_DIR=./data
 AUTO_GIT_COMMIT=true
 APP_ENV=development
 ```
 
 > **💡 Web UI からの編集も可能**: 上記の設定はダッシュボードの **「設定」** ページからも編集できます。保存した値は `data/settings.json` にパーミッション `0600` で書き込まれ、環境変数より優先して適用されます。サーバー再起動は不要です（API キーは平文で保存されるため、共有マシンでの使用は避けてください）。
+
+> **💡 Temperature と Effort について**: 新しいモデルの多くは `temperature` を受け付けないため、対応しているモデルにだけ送ります。`effort`（思考の深さ）も、対応しているモデルにだけ送ります。対応の詳細は [LLM セットアップガイド](docs/LLM_SETUP.md#生成パラメータtemperature--effort) を参照してください。
 
 ## セキュリティ
 

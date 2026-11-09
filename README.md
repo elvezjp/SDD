@@ -202,7 +202,7 @@ Each sample file clearly indicates which process it belongs to.
 
 ## spec-ai-writer (Specification Generation Tool)
 
-The `spec-ai-writer/` directory contains an optional AI tool that supports Spec-Driven Development. It conducts interviews via LLM API and automatically generates specification documents for all 7 processes (requires Python 3.9+ and Node.js).
+The `spec-ai-writer/` directory contains an optional AI tool that supports Spec-Driven Development. It conducts interviews via LLM API and automatically generates specification documents for all 7 processes (requires Python 3.10+ and Node.js 22.22+).
 
 For setup instructions and usage details, see [spec-ai-writer/README.md](spec-ai-writer/README.md).
 

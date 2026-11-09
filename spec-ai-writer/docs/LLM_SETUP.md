@@ -5,7 +5,7 @@ Spec AIライターは以下の7つのLLMプロバイダーに対応していま
 | プロバイダー  | 特徴                                            | 推奨用途                   |
 | ------------- | ----------------------------------------------- | -------------------------- |
 | Anthropic     | 高品質な日本語対応、仕様書生成に最適            | 個人・チーム開発           |
-| OpenAI (公式) | GPT-5 シリーズ対応                              | OpenAIを既に利用中の場合   |
+| OpenAI (公式) | GPT-6 シリーズ対応                              | OpenAIを既に利用中の場合   |
 | OpenRouter    | 100以上のモデルを単一APIで切替可能              | 複数モデルを試したい場合   |
 | Moonshot      | Kimi シリーズ対応                               | 高コスパ、長コンテキスト   |
 | Ollama        | API料金不要、オフライン動作、データ外部送信なし | プライバシー重視・検証用途 |
@@ -15,6 +15,28 @@ Spec AIライターは以下の7つのLLMプロバイダーに対応していま
 > **Web UI からの設定**: 上記プロバイダーのほとんどは、Web ダッシュボードの「設定」ページから編集・即時反映できます。`.env` を編集してサーバーを再起動する必要はありません。変更は `data/settings.json` に保存され、環境変数よりも優先されます。
 >
 > **注意**: `data/settings.json` は API キーを**平文**で保存します（`.env` と同じリスクモデル）。共有マシンでの使用は避け、ファイルパーミッションは自動的に `0600` に設定されます。
+
+## 生成パラメータ（Temperature / Effort）
+
+生成パラメータは、選んでいるプロバイダーとモデルが対応している場合にだけ送信します。設定画面では、対応していない項目は変更できません。
+
+**Temperature**（環境変数 `TEMPERATURE`）
+
+| 送信する                                                        | 送信しない                                                                      |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| OpenAI の `gpt-3.5` / `gpt-4` / `gpt-4o` 系、Ollama、LM Studio | Claude、AWS Bedrock、OpenAI の `gpt-5` / `gpt-6` / `o` 系、その他の判定できないモデル |
+
+`kimi-k2.6` は、設定にかかわらず 0.6 に固定して送信します。Claude の新しいモデルなど、`temperature` を受け付けないモデルに代わりとなる設定はありません。
+
+**Effort**（環境変数 `EFFORT`、初期値 `auto`）
+
+思考の深さを指定します。`auto` のときは送信せず、モデルの既定の動作になります。
+
+| 接続先                                   | 選べる値                                                                                                         |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Claude / AWS Bedrock                     | Claude 4.7 以降は `low` / `medium` / `high` / `xhigh` / `max`。4.6 は `xhigh` なし。Opus 4.5 は `low`〜`high`。Haiku 4.5 などは対象外 |
+| OpenAI                                   | `gpt-6` 系は `low`〜`max`。`gpt-5` / `o` 系は `low` / `medium` / `high`。`-pro` 系と `o1-mini` は対象外                 |
+| OpenRouter、Moonshot、Ollama、LM Studio | 対象外                                                                                                           |
 
 ---
 
@@ -29,17 +51,18 @@ Spec AIライターは以下の7つのLLMプロバイダーに対応していま
 ```env
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
 DEFAULT_LLM_PROVIDER=claude
-CLAUDE_MODEL=claude-haiku-4-5-20251001
+CLAUDE_MODEL=claude-haiku-5-5
 ```
 
 ### モデルの例
 
-デフォルトモデル: `claude-haiku-4-5-20251001`
+デフォルトモデル: `claude-haiku-5-5`
 
-| モデル                           | モデルID                    |
-| -------------------------------- | --------------------------- |
-| Claude Haiku 4.5（デフォルト）   | `claude-haiku-4-5-20251001` |
-| Claude Sonnet 4.6                | `claude-sonnet-4-6`         |
+| モデル                         | モデルID            |
+| ------------------------------ | ------------------- |
+| Claude Haiku 5.5（デフォルト） | `claude-haiku-5-5`  |
+| Claude Sonnet 5.5              | `claude-sonnet-5-5` |
+| Claude Opus 5.5                | `claude-opus-5-5`   |
 
 モデルIDは[Anthropic API モデルページ](https://platform.claude.com/docs/en/about-claude/models/overview)を、料金は [Anthropic API 料金ページ](https://platform.claude.com/docs/en/about-claude/pricing) を確認してください。
 
@@ -76,22 +99,20 @@ CLAUDE_MODEL=claude-haiku-4-5-20251001
 ```env
 OPENAI_API_KEY=your_openai_api_key_here
 DEFAULT_LLM_PROVIDER=openai
-OPENAI_MODEL=gpt-5-mini
+OPENAI_MODEL=gpt-6-luna
 ```
 
 ### モデルの例
 
-デフォルトモデル: `gpt-5-mini`
+デフォルトモデル: `gpt-6-luna`
 
-| モデル                   | モデルID      |
-| ------------------------ | ------------- |
-| GPT-5 mini（デフォルト） | `gpt-5-mini`  |
-| GPT-4o                   | `gpt-4o`      |
-| GPT-4o mini              | `gpt-4o-mini` |
-| o3                       | `o3`          |
-| o4-mini                  | `o4-mini`     |
+| モデル                   | モデルID        |
+| ------------------------ | --------------- |
+| GPT-6 Luna（デフォルト） | `gpt-6-luna`    |
+| GPT-6.1 Sol              | `gpt-6.1-sol`   |
+| GPT-6 Astra              | `gpt-6-astra`   |
 
-> **o シリーズ（o1/o3/o4-mini）について**: `max_completion_tokens` パラメータと temperature 非対応のため、`provider_registry.py` にモデル固有設定が登録されています。指定するだけで自動的に適切なパラメータが使用されます。
+> **推論モデルについて**: `gpt-5` / `gpt-6` / `o` 系は `max_completion_tokens` を使い、`temperature` は送信しません。モデルのファミリーごとに `provider_registry.py` で判定するため、モデル ID を指定するだけで適切なパラメータが使用されます。
 
 料金は [OpenAI API 料金ページ](https://openai.com/api/pricing/) を確認してください。
 
@@ -121,19 +142,21 @@ OPENAI_MODEL=gpt-5-mini
 ```env
 DEFAULT_LLM_PROVIDER=openrouter
 OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxx
-OPENROUTER_MODEL=anthropic/claude-3.5-sonnet
+OPENROUTER_MODEL=nvidia/nemotron-3.5-lightning:free
 ```
 
 または Web UI の「設定」ページで **「OpenRouter」** を選び、API キーとモデル ID を入力して保存します。
 
 ### モデル ID の例
 
-| モデル            | モデル ID                           |
-| ----------------- | ----------------------------------- |
-| Claude 3.5 Sonnet | `anthropic/claude-3.5-sonnet`       |
-| GPT-4o            | `openai/gpt-4o`                     |
-| Llama 3.1 70B     | `meta-llama/llama-3.1-70b-instruct` |
-| Gemini Pro 1.5    | `google/gemini-pro-1.5`             |
+| モデル                                  | モデル ID                            |
+| --------------------------------------- | ------------------------------------ |
+| Nemotron 3.5 Lightning（デフォルト）    | `nvidia/nemotron-3.5-lightning:free` |
+| Claude Haiku 5.5                        | `anthropic/claude-haiku-5.5`         |
+| GPT-6 Luna                              | `openai/gpt-6-luna`                  |
+| Gemma 4 31B                             | `google/gemma-4-31b-it:free`         |
+
+`:free` の付いたモデルは、提供が終了することがあります。
 
 料金は [OpenRouter Models](https://openrouter.ai/models) を確認してください。
 
@@ -153,7 +176,7 @@ OPENROUTER_MODEL=anthropic/claude-3.5-sonnet
 
 **解決策**:
 
-- `anthropic/claude-3.5-sonnet` のように `provider/model` 形式で指定
+- `anthropic/claude-haiku-5.5` のように `provider/model` 形式で指定
 - [モデル一覧](https://openrouter.ai/models) から正確な ID をコピー
 
 ---
@@ -170,18 +193,21 @@ OPENROUTER_MODEL=anthropic/claude-3.5-sonnet
 ```env
 DEFAULT_LLM_PROVIDER=kimi
 KIMI_API_KEY=your_kimi_api_key_here
-KIMI_MODEL=kimi-k2.6
+KIMI_MODEL=kimi-k3
 ```
 
 または Web UI の「設定」ページで **「Moonshot Kimi」** を選び、API キーとモデル ID を入力して保存します。
 
 ### モデルの例
 
-| モデル                  | モデル ID   |
-| ----------------------- | ----------- |
-| Kimi K2.6（デフォルト） | `kimi-k2.6` |
+| モデル                | モデル ID       |
+| --------------------- | --------------- |
+| Kimi K3（デフォルト） | `kimi-k3`       |
+| Kimi K3.1 Pro         | `kimi-k3.1-pro` |
 
-料金は [Moonshot Platform](https://platform.moonshot.cn/) を確認してください。
+`kimi-k2.6` は 2026 年 12 月下旬に廃止予定で、2026 年 11 月 1 日以降に登録したユーザーは利用できません。
+
+モデルの一覧は [Kimi API のモデル一覧](https://platform.kimi.ai/docs/models) を、料金は [Moonshot Platform](https://platform.moonshot.cn/) を確認してください。
 
 ---
 
@@ -196,12 +222,12 @@ OpenAI 互換 HTTP API を提供するローカル LLM ランタイムに接続�
 1. [Ollama](https://ollama.com/) をインストール
 2. モデルをダウンロード:
    ```bash
-   ollama pull gemma3:4b
+   ollama pull gemma4
    ```
 3. `.env` ファイルを設定:
    ```env
    DEFAULT_LLM_PROVIDER=ollama
-   OLLAMA_MODEL=gemma3:4b
+   OLLAMA_MODEL=gemma4
    # OLLAMA_BASE_URL=   # 空欄 = http://localhost:11434/v1
    ```
 4. Ollama サーバーが起動していることを確認:
@@ -217,7 +243,7 @@ OpenAI 互換 HTTP API を提供するローカル LLM ランタイムに接続�
 4. `.env` ファイルを設定:
    ```env
    DEFAULT_LLM_PROVIDER=lmstudio
-   LMSTUDIO_MODEL=local-model  # LM Studio は任意の値でOK
+   LMSTUDIO_MODEL=google/gemma-4  # 読み込んだモデルの識別子に合わせて変更
    # LMSTUDIO_BASE_URL=        # 空欄 = http://localhost:1234/v1
    ```
 
@@ -265,7 +291,7 @@ AWS Bedrockを使用すると、既存のAWSインフラ内でClaudeモデルを
 ### 前提条件
 
 - AWSアカウント
-- AWS CLI設定済み、またはAWS認証情報
+- Bedrock API キー、または AWS のアクセスキーとシークレットキー
 
 ### セットアップ
 
@@ -275,7 +301,7 @@ AWS Bedrockを使用すると、既存のAWSインフラ内でClaudeモデルを
 2. リージョンを選択 (推奨: `ap-northeast-1`)
 3. AWS Bedrock → Model access
 4. 「Manage model access」をクリック
-5. 「Anthropic」セクションで使用するモデルを有効化 (例: Claude Sonnet 4.6)
+5. 「Anthropic」セクションで使用するモデルを有効化 (例: Claude Haiku 5.5)
 
 #### ステップ2: IAMポリシーの設定
 
@@ -289,7 +315,8 @@ AWS Bedrockを使用すると、既存のAWSインフラ内でClaudeモデルを
       "Effect": "Allow",
       "Action": ["bedrock:InvokeModel"],
       "Resource": [
-        "arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-6*"
+        "arn:aws:bedrock:*:*:inference-profile/*anthropic.claude-haiku-5-5*",
+        "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-5-5*"
       ]
     }
   ]
@@ -298,7 +325,19 @@ AWS Bedrockを使用すると、既存のAWSインフラ内でClaudeモデルを
 
 #### ステップ3: 認証情報の設定
 
-**オプション A: 環境変数 (ローカル開発)**
+Bedrock API キーか、アクセスキーとシークレットキーの組のどちらかを設定します。両方を設定した場合は、Bedrock API キーを使います。Web UI の「設定」ページの「AWS Bedrock」でも設定できます。
+
+**オプション A: Bedrock API キー**
+
+[Bedrock API キー](https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/api-keys.html)を発行し、`.env`ファイルに設定します。短期キーは最長 12 時間で失効し、発行したリージョンでのみ使えます。
+
+```env
+AWS_BEARER_TOKEN_BEDROCK=your_bedrock_api_key_here
+AWS_REGION=ap-northeast-1
+DEFAULT_LLM_PROVIDER=bedrock
+```
+
+**オプション B: アクセスキーとシークレットキー**
 
 `.env`ファイル:
 
@@ -309,36 +348,18 @@ AWS_REGION=ap-northeast-1
 DEFAULT_LLM_PROVIDER=bedrock
 ```
 
-**オプション B: AWS CLI認証情報 (推奨)**
-
-```bash
-aws configure
-```
-
-`.env`ファイル:
-
-```env
-# AWS_ACCESS_KEY_ID と AWS_SECRET_ACCESS_KEY は不要
-AWS_REGION=ap-northeast-1
-DEFAULT_LLM_PROVIDER=bedrock
-```
-
-**オプション C: IAMロール (EC2/ECS/Lambda)**
-
-```env
-# 認証情報は不要 (IAMロールから自動取得)
-AWS_REGION=ap-northeast-1
-DEFAULT_LLM_PROVIDER=bedrock
-```
-
 ### モデルの例
 
 Bedrockでは Cross-Region Inference Profile を使用してモデルにアクセスします。
 
-| モデル            | Inference Profile ID (東京リージョンの例) |
-| ----------------- | ----------------------------------------- |
-| Claude Sonnet 4.6 | `jp.anthropic.claude-sonnet-4-6`          |
-| Claude Haiku 4.5  | `jp.anthropic.claude-haiku-4-5`           |
+デフォルトモデル: `global.anthropic.claude-haiku-5-5`
+
+| モデル                         | Inference Profile ID                | 備考                     |
+| ------------------------------ | ----------------------------------- | ------------------------ |
+| Claude Haiku 5.5（デフォルト） | `global.anthropic.claude-haiku-5-5` | リージョンを問わない     |
+| Claude Haiku 5.5               | `jp.anthropic.claude-haiku-5-5`     | 日本のリージョンで処理   |
+
+`global.` と `jp.` は、それぞれ別のリソースとして IAM で許可が必要です。
 
 料金は [AWS Bedrock 料金ページ](https://aws.amazon.com/bedrock/pricing/) を確認してください。
 
@@ -358,10 +379,13 @@ AWS_REGION=ap-northeast-1  # 正しいリージョンに変更
 
 **原因**: IAMポリシーが不足、またはモデルアクセスが有効化されていない
 
+画面には「LLM APIキーが無効、または、モデルの利用が許可されていません。」と表示されます。
+
 **解決策**:
 
 1. AWS Console → Bedrock → Model accessでモデルを有効化
-2. IAMポリシーで`bedrock:InvokeModel`権限を付与
+2. IAMポリシーで、使用する Inference Profile に対する`bedrock:InvokeModel`権限を付与
+3. 許可されているモデルの ID（`global.` または `jp.`）を設定
 
 #### エラー: "ValidationException: The provided model identifier is invalid"
 

@@ -196,7 +196,7 @@ SDD/
 
 ## spec-ai-writer（仕様書自動生成ツール）
 
-`spec-ai-writer/` ディレクトリには、仕様駆動開発を支援するオプションのAIツールが含まれています。LLM APIを使ってインタビュー形式で対話を行い、「7 つの工程」の仕様書を自動生成します（Python 3.9以上・Node.js必要）。
+`spec-ai-writer/` ディレクトリには、仕様駆動開発を支援するオプションのAIツールが含まれています。LLM APIを使ってインタビュー形式で対話を行い、「7 つの工程」の仕様書を自動生成します（Python 3.10以上・Node.js 22.22以上が必要）。
 
 詳しい使い方は [spec-ai-writer/README.md](spec-ai-writer/README.md) を参照してください。
 
