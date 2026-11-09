@@ -13,8 +13,8 @@ from spec_ai_writer.llm.exceptions import (
 )
 
 
-def _response(*blocks):
-    return SimpleNamespace(content=list(blocks))
+def _response(*blocks, stop_reason="end_turn", stop_details=None):
+    return SimpleNamespace(content=list(blocks), stop_reason=stop_reason, stop_details=stop_details)
 
 
 def _text(text):
@@ -108,6 +108,33 @@ class TestClaudeClient:
         mock_anthropic.return_value = mock_client
 
         with pytest.raises(expected):
+            await ClaudeClient(api_key="test-key").chat([{"role": "user", "content": "hi"}])
+
+    @pytest.mark.parametrize(
+        "response, message",
+        [
+            (
+                _response(
+                    stop_reason="refusal",
+                    stop_details=SimpleNamespace(category="cyber", explanation="declined"),
+                ),
+                "拒否しました（カテゴリ: cyber）",
+            ),
+            (_response(stop_reason="refusal"), "拒否しました"),
+            (_response(_text("途中まで"), stop_reason="max_tokens"), "max_tokens"),
+            (_response(_thinking(), stop_reason="max_tokens"), "max_tokens"),
+            (_response(), "応答が空でした"),
+            (_response(_thinking()), "応答が空でした"),
+            (_response(_text("  ")), "応答が空でした"),
+        ],
+    )
+    @patch("spec_ai_writer.llm.claude_client.AsyncAnthropic")
+    async def test_chat_rejects_unusable_responses(self, mock_anthropic, response, message):
+        mock_client = Mock()
+        mock_client.messages.create = AsyncMock(return_value=response)
+        mock_anthropic.return_value = mock_client
+
+        with pytest.raises(LLMResponseError, match=message):
             await ClaudeClient(api_key="test-key").chat([{"role": "user", "content": "hi"}])
 
 

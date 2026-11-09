@@ -87,8 +87,6 @@ class ClaudeClient(BaseLLMClient):
                 api_kwargs["system"] = system_message
 
             response = await self.client.messages.create(**api_kwargs)
-            # Models with thinking enabled return thinking blocks before the text
-            return "".join(block.text for block in response.content if block.type == "text")
         except AuthenticationError as e:
             logger.error(f"Claude authentication failed: {e}")
             raise LLMAuthenticationError(
@@ -102,3 +100,9 @@ class ClaudeClient(BaseLLMClient):
         except Exception as e:
             logger.error(f"Claude API error: {e}")
             raise LLMResponseError(f"Claude API error: {str(e)}") from e
+
+        # Models with thinking enabled return thinking blocks before the text
+        text = "".join(block.text for block in response.content if block.type == "text")
+        return self._require_response_text(
+            "Claude", text, response.stop_reason, getattr(response.stop_details, "category", None)
+        )
