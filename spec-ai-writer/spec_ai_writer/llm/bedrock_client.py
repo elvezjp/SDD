@@ -39,7 +39,8 @@ class BedrockClient(BaseLLMClient):
         aws_secret_access_key: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
-        timeout: float = 30.0
+        timeout: float = 30.0,
+        effort: Optional[str] = None
     ):
         """
         Initialize Bedrock client.
@@ -52,6 +53,7 @@ class BedrockClient(BaseLLMClient):
             temperature: Accepted for interface compatibility; not sent to the API
             max_tokens: Maximum tokens to generate
             timeout: Timeout in seconds for API calls
+            effort: Effort level, or None to use the model's default
 
         Raises:
             ImportError: If aiobotocore is not installed
@@ -65,6 +67,7 @@ class BedrockClient(BaseLLMClient):
         # Note: Bedrock doesn't use api_key, so we pass empty string
         super().__init__("", model, temperature, timeout=timeout)
         self.max_tokens = max_tokens
+        self.effort = effort
 
         # Store client kwargs; the actual HTTP client is created per chat() call
         self._session = aiobotocore.session.get_session()
@@ -145,6 +148,9 @@ class BedrockClient(BaseLLMClient):
         # Add system message if present
         if system_message:
             request_body["system"] = system_message
+
+        if self.effort:
+            request_body["output_config"] = {"effort": self.effort}
 
         try:
             async with self._session.create_client(

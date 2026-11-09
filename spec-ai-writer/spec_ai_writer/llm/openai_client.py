@@ -34,6 +34,7 @@ class OpenAIClient(BaseLLMClient):
         max_tokens_param: str = "max_tokens",
         temperature_supported: bool = True,
         fixed_temperature: Optional[float] = None,
+        effort: Optional[str] = None,
     ):
         """
         Args:
@@ -48,6 +49,7 @@ class OpenAIClient(BaseLLMClient):
                 body (e.g. {"thinking": {"type": "disabled"}} for Kimi).
             max_tokens_param: Parameter name for token limit. Use
                 "max_completion_tokens" for o1/o3 series models.
+            effort: reasoning_effort to send, or None to use the model's default.
             temperature_supported: Set False for models that reject the
                 temperature parameter (o1/o3 series).
         """
@@ -65,6 +67,7 @@ class OpenAIClient(BaseLLMClient):
         self.max_tokens_param = max_tokens_param
         self.temperature_supported = temperature_supported
         self.fixed_temperature = fixed_temperature
+        self.effort = effort
 
         client_kwargs: dict = {"api_key": api_key, "timeout": self.timeout}
         if base_url:
@@ -95,6 +98,8 @@ class OpenAIClient(BaseLLMClient):
         }
         if self.temperature_supported:
             api_kwargs["temperature"] = effective_temperature
+        if self.effort:
+            api_kwargs["reasoning_effort"] = self.effort
         if self.extra_body:
             api_kwargs["extra_body"] = self.extra_body
 

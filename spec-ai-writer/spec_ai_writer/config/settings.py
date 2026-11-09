@@ -93,6 +93,10 @@ class Settings(BaseSettings):
     temperature: float = Field(
         default=0.7, ge=0.0, le=2.0, description="LLM temperature"
     )
+    effort: Literal["auto", "low", "medium", "high", "xhigh", "max"] = Field(
+        default="auto",
+        description="Reasoning effort. 'auto' sends nothing and uses the model's default.",
+    )
 
     # --- App config ---
     data_dir: str = Field(default="./data", description="Data directory")
@@ -156,6 +160,7 @@ _OVERLAY_FIELDS: frozenset[str] = frozenset(
     {
         "default_llm_provider",
         "temperature",
+        "effort",
         # Claude
         "anthropic_api_key",
         "claude_model",
@@ -191,6 +196,8 @@ def _nested_to_flat(json_data: dict[str, Any]) -> dict[str, Any]:
         flat["default_llm_provider"] = json_data["active_provider"]
     if "temperature" in json_data:
         flat["temperature"] = json_data["temperature"]
+    if "effort" in json_data:
+        flat["effort"] = json_data["effort"]
 
     providers = json_data.get("providers", {})
 

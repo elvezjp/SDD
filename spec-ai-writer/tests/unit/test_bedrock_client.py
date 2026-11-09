@@ -51,6 +51,17 @@ class TestBedrockClient:
         assert body["anthropic_version"] == "bedrock-2023-05-31"
         assert body["max_tokens"] == 4096
 
+    @pytest.mark.parametrize(
+        "effort, expected", [("high", {"effort": "high"}), (None, None)]
+    )
+    @patch("spec_ai_writer.llm.bedrock_client.aiobotocore.session.get_session")
+    async def test_chat_sends_effort_only_when_set(self, mock_get_session, effort, expected):
+        client = _mock_session(mock_get_session, [{"type": "text", "text": "ok"}])
+
+        await BedrockClient(effort=effort).chat([{"role": "user", "content": "hi"}])
+
+        assert _request_body(client).get("output_config") == expected
+
     @patch("spec_ai_writer.llm.bedrock_client.aiobotocore.session.get_session")
     async def test_chat_skips_thinking_blocks(self, mock_get_session):
         _mock_session(

@@ -11,6 +11,10 @@
 
 ## [Unreleased]
 
+### 追加
+
+- **spec-ai-writer / Effort の設定**: 設定画面の「生成パラメータ」で Effort を選べるようにしました。初期値は「自動（モデルの既定）」です。Temperature と Effort は、選んでいるプロバイダとモデルが対応している場合にだけ設定でき、対応していないモデルには送信しません（Issue #113）。
+
 ### 変更
 
 - **spec-ai-writer / LLM クライアントの SDK を更新**: `anthropic` を 2.x、`openai` を 3.x に更新しました。Claude には API バージョン `2026-10-21` で接続し、API キーは `Authorization` ヘッダーで送ります（Issue #112）。

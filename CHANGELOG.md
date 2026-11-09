@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **spec-ai-writer / Effort setting**: Added an Effort option to the generation parameters on the Settings screen, defaulting to "Auto (model default)". Temperature and Effort can be set only when the selected provider and model support them, and are not sent otherwise (Issue #113).
+
 ### Changed
 
 - **spec-ai-writer / Updated LLM client SDKs**: Updated `anthropic` to 2.x and `openai` to 3.x. Claude requests now use API version `2026-10-21` and send the API key in the `Authorization` header (Issue #112).

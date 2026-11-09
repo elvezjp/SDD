@@ -144,6 +144,23 @@ class TestOpenAIClient:
         assert "max_tokens" not in call_kwargs
         assert "temperature" not in call_kwargs
 
+    @pytest.mark.parametrize("effort, expected", [("high", "high"), (None, None)])
+    @patch("spec_ai_writer.llm.openai_client.AsyncOpenAI")
+    async def test_chat_sends_effort_only_when_set(self, mock_openai, effort, expected):
+        mock_response = Mock()
+        mock_response.choices = [Mock()]
+        mock_response.choices[0].message.content = "ok"
+        mock_client = Mock()
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+        mock_openai.return_value = mock_client
+
+        await OpenAIClient(api_key="test-key", effort=effort).chat(
+            [{"role": "user", "content": "hi"}]
+        )
+
+        call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+        assert call_kwargs.get("reasoning_effort") == expected
+
     def test_model_constants(self):
         assert GPT4_TURBO == "gpt-4-turbo-preview"
         assert GPT35_TURBO == "gpt-3.5-turbo"

@@ -1,10 +1,16 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { Save, Info, AlertCircle, CheckCircle2, Leaf } from "lucide-react";
 import apiClient from "@/api/client";
 import type {
   LLMProvider,
   ProviderUpdate,
+  EffortSetting,
   SettingsResponse,
   SettingsUpdateRequest,
   SettingsSource,
@@ -19,7 +25,6 @@ interface ProviderMeta {
   hasApiKey: boolean;
   hasBaseUrl: boolean;
   hasBedrock: boolean;
-  appliesTemperature: boolean;
 }
 
 const PROVIDER_META: Record<LLMProvider, ProviderMeta> = {
@@ -28,49 +33,42 @@ const PROVIDER_META: Record<LLMProvider, ProviderMeta> = {
     hasApiKey: true,
     hasBaseUrl: false,
     hasBedrock: false,
-    appliesTemperature: false,
   },
   openai: {
     label: "OpenAI",
     hasApiKey: true,
     hasBaseUrl: false,
     hasBedrock: false,
-    appliesTemperature: true,
   },
   openrouter: {
     label: "OpenRouter",
     hasApiKey: true,
     hasBaseUrl: false,
     hasBedrock: false,
-    appliesTemperature: true,
   },
   ollama: {
     label: "Ollama (ローカル)",
     hasApiKey: false,
     hasBaseUrl: true,
     hasBedrock: false,
-    appliesTemperature: true,
   },
   lmstudio: {
     label: "LM Studio (ローカル)",
     hasApiKey: false,
     hasBaseUrl: true,
     hasBedrock: false,
-    appliesTemperature: true,
   },
   kimi: {
     label: "Moonshot",
     hasApiKey: true,
     hasBaseUrl: false,
     hasBedrock: false,
-    appliesTemperature: true,
   },
   bedrock: {
     label: "AWS Bedrock",
     hasApiKey: false,
     hasBaseUrl: false,
     hasBedrock: true,
-    appliesTemperature: false,
   },
 };
 
@@ -159,6 +157,9 @@ function SettingsForm({ initialData }: { initialData: SettingsResponse }) {
   const [temperature, setTemperature] = useState<number>(
     () => initialData.temperature,
   );
+  const [effort, setEffort] = useState<EffortSetting>(
+    () => initialData.effort,
+  );
   const [slots, setSlots] = useState<Record<LLMProvider, SlotState>>(() =>
     buildInitialSlots(initialData),
   );
@@ -238,6 +239,7 @@ function SettingsForm({ initialData }: { initialData: SettingsResponse }) {
     const payload: SettingsUpdateRequest = {
       active_provider: activeProvider,
       temperature,
+      effort,
       providers: { [activeProvider]: providerUpdate },
     };
 
@@ -246,6 +248,14 @@ function SettingsForm({ initialData }: { initialData: SettingsResponse }) {
 
   const prov = displayData.providers[activeProvider];
   const slot = slots[activeProvider];
+
+  const { data: generationParams } = useQuery({
+    queryKey: ["generation-params", activeProvider, slot.model],
+    queryFn: () => apiClient.getGenerationParams(activeProvider, slot.model),
+    placeholderData: keepPreviousData,
+  });
+  const temperatureSupported = generationParams?.temperature_supported ?? true;
+  const effortLevels = generationParams?.effort_levels ?? [];
   const meta = PROVIDER_META[activeProvider];
   const src = (key: string): SettingsSource =>
     displayData.sources[key] ?? "default";
@@ -488,13 +498,39 @@ function SettingsForm({ initialData }: { initialData: SettingsResponse }) {
               max={2}
               step={0.05}
               value={temperature}
-              disabled={!PROVIDER_META[activeProvider].appliesTemperature}
+              disabled={!temperatureSupported}
               onChange={(e) => {
                 setTemperature(parseFloat(e.target.value));
                 markDirty();
               }}
               className="w-full disabled:opacity-50 disabled:cursor-not-allowed"
             />
+          </div>
+          <div className="mt-4">
+            <label
+              htmlFor="effort"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Effort（思考の深さ）
+              {src("effort") === "env" && <EnvBadge />}
+            </label>
+            <select
+              id="effort"
+              value={effortLevels.includes(effort) ? effort : "auto"}
+              disabled={effortLevels.length === 0}
+              onChange={(e) => {
+                setEffort(e.target.value as EffortSetting);
+                markDirty();
+              }}
+              className="input w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="auto">自動（モデルの既定）</option>
+              {effortLevels.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
           </div>
           <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
             生成パラメータは、対応していないモデルには送信されません。

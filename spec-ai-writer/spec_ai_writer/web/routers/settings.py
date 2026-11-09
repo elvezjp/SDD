@@ -1,6 +1,7 @@
 """Settings API router.
 
 GET /api/settings   – Return current settings with per-field source info.
+GET /api/settings/generation-params – Return the parameters a model accepts.
 PUT /api/settings   – Partial update; persists to data/settings.json and hot-reloads.
 
 Per-provider slots are stored independently in the JSON file, so switching
@@ -26,7 +27,8 @@ from spec_ai_writer.config.settings import (
     reload_settings,
 )
 from spec_ai_writer.config.settings_file import load_settings, save_settings
-from spec_ai_writer.llm.provider_registry import PROVIDERS
+from spec_ai_writer.llm.factory import configured_model
+from spec_ai_writer.llm.provider_registry import PROVIDERS, get_model_config
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -53,9 +55,16 @@ class ProviderSettingsResponse(BaseModel):
 class SettingsResponse(BaseModel):
     active_provider: str
     temperature: float
+    effort: str
     providers: dict[str, ProviderSettingsResponse]
     # Flat source map: "temperature" / "kimi.model" / "claude.api_key" → source
     sources: dict[str, SettingsSource]
+
+
+class GenerationParamsResponse(BaseModel):
+    model: str
+    temperature_supported: bool
+    effort_levels: list[str]
 
 
 # ---------------------------------------------------------------------------
@@ -75,6 +84,7 @@ class ProviderUpdate(BaseModel):
 class SettingsUpdateRequest(BaseModel):
     active_provider: Optional[_PROVIDER_NAMES] = None  # type: ignore[valid-type]
     temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
+    effort: Optional[Literal["auto", "low", "medium", "high", "xhigh", "max"]] = None
     providers: Optional[dict[str, ProviderUpdate]] = None
 
 
@@ -102,6 +112,7 @@ def _build_response() -> SettingsResponse:
     source_map: dict[str, SettingsSource] = {
         "active_provider": srcs.get("default_llm_provider", "default"),
         "temperature":     srcs.get("temperature", "default"),
+        "effort":          srcs.get("effort", "default"),
     }
 
     for name in PROVIDERS:
@@ -168,6 +179,7 @@ def _build_response() -> SettingsResponse:
     return SettingsResponse(
         active_provider=s.default_llm_provider,
         temperature=s.temperature,
+        effort=s.effort,
         providers=providers,
         sources=source_map,
     )
@@ -181,6 +193,8 @@ def _merge_settings(existing: dict[str, Any], req: SettingsUpdateRequest) -> dic
         merged["active_provider"] = req.active_provider
     if req.temperature is not None:
         merged["temperature"] = req.temperature
+    if req.effort is not None:
+        merged["effort"] = req.effort
 
     if req.providers:
         merged_providers: dict[str, Any] = dict(merged.get("providers", {}))
@@ -231,6 +245,21 @@ def _merge_settings(existing: dict[str, Any], req: SettingsUpdateRequest) -> dic
 async def get_llm_settings() -> SettingsResponse:
     """Return current settings with secrets masked and source info per field."""
     return _build_response()
+
+
+@router.get("/generation-params", response_model=GenerationParamsResponse)
+async def get_generation_params(
+    provider: _PROVIDER_NAMES,  # type: ignore[valid-type]
+    model: str = "",
+) -> GenerationParamsResponse:
+    """Return the generation parameters applied to a provider and model."""
+    resolved = model or configured_model(get_settings(), provider)
+    config = get_model_config(resolved, provider)
+    return GenerationParamsResponse(
+        model=resolved,
+        temperature_supported=config.temperature_supported and config.fixed_temperature is None,
+        effort_levels=list(config.effort_levels),
+    )
 
 
 @router.put("/", response_model=SettingsResponse)

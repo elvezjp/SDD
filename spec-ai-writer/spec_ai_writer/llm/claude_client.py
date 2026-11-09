@@ -20,7 +20,8 @@ class ClaudeClient(BaseLLMClient):
         model: str = "claude-haiku-4-5-20251001",
         temperature: float = 0.7,
         max_tokens: int = 4096,
-        timeout: float = 30.0
+        timeout: float = 30.0,
+        effort: Optional[str] = None
     ):
         """
         Initialize Claude client.
@@ -31,9 +32,11 @@ class ClaudeClient(BaseLLMClient):
             temperature: Accepted for interface compatibility; not sent to the API
             max_tokens: Maximum tokens to generate
             timeout: Timeout in seconds for API calls
+            effort: Effort level, or None to use the model's default
         """
         super().__init__(api_key, model, temperature, timeout=timeout)
         self.max_tokens = max_tokens
+        self.effort = effort
         self.client = AsyncAnthropic(api_key=api_key, timeout=self.timeout)
 
     async def chat(
@@ -85,6 +88,9 @@ class ClaudeClient(BaseLLMClient):
             # Add system message if present
             if system_message:
                 api_kwargs["system"] = system_message
+
+            if self.effort:
+                api_kwargs["output_config"] = {"effort": self.effort}
 
             response = await self.client.messages.create(**api_kwargs)
         except AuthenticationError as e:
