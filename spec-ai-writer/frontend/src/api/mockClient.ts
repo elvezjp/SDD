@@ -20,6 +20,7 @@ import type {
   ProviderSettingsResponse,
   SettingsResponse,
   SettingsUpdateRequest,
+  GenerationParamsResponse,
 } from "@/types";
 
 // Simulate network delay
@@ -387,6 +388,7 @@ class MockAPIClient {
   private mockSettings: SettingsResponse = {
     active_provider: "claude",
     temperature: 0.7,
+    effort: "auto",
     providers: {
       claude: {
         model: "claude-haiku-4-5-20251001",
@@ -459,8 +461,22 @@ class MockAPIClient {
     };
   }
 
+  async getGenerationParams(
+    provider: LLMProvider,
+    model: string,
+  ): Promise<GenerationParamsResponse> {
+    await delay(100);
+    const isClaude = provider === "claude" || provider === "bedrock";
+    return {
+      model,
+      temperature_supported: !isClaude,
+      effort_levels: isClaude ? ["low", "medium", "high"] : [],
+    };
+  }
+
   async updateSettings(data: SettingsUpdateRequest): Promise<SettingsResponse> {
     await delay(300);
+    if (data.effort) this.mockSettings.effort = data.effort;
     if (data.active_provider)
       this.mockSettings.active_provider = data.active_provider;
     if (data.temperature !== undefined)

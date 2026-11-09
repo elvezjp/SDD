@@ -123,9 +123,18 @@ export interface ProviderSettingsResponse {
   aws_region: string;
 }
 
+export type EffortSetting = "auto" | "low" | "medium" | "high" | "xhigh" | "max";
+
+export interface GenerationParamsResponse {
+  model: string;
+  temperature_supported: boolean;
+  effort_levels: string[];
+}
+
 export interface SettingsResponse {
   active_provider: LLMProvider;
   temperature: number;
+  effort: EffortSetting;
   providers: Record<LLMProvider, ProviderSettingsResponse>;
   /** e.g. "kimi.model" → "json" | "env" | "default" */
   sources: Record<string, SettingsSource>;
@@ -144,5 +153,6 @@ export interface ProviderUpdate {
 export interface SettingsUpdateRequest {
   active_provider?: LLMProvider;
   temperature?: number;
+  effort?: EffortSetting;
   providers?: Partial<Record<LLMProvider, ProviderUpdate>>;
 }

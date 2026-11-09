@@ -45,6 +45,20 @@ class TestClaudeClient:
         assert call_kwargs["model"] == model
         assert call_kwargs["max_tokens"] == 4096
 
+    @pytest.mark.parametrize(
+        "effort, expected", [("high", {"effort": "high"}), (None, None)]
+    )
+    @patch("spec_ai_writer.llm.claude_client.AsyncAnthropic")
+    async def test_chat_sends_effort_only_when_set(self, mock_anthropic, effort, expected):
+        mock_client = Mock()
+        mock_client.messages.create = AsyncMock(return_value=_response(_text("ok")))
+        mock_anthropic.return_value = mock_client
+
+        client = ClaudeClient(api_key="test-key", model="claude-haiku-5-5", effort=effort)
+        await client.chat([{"role": "user", "content": "hi"}])
+
+        assert mock_client.messages.create.call_args.kwargs.get("output_config") == expected
+
     @patch("spec_ai_writer.llm.claude_client.AsyncAnthropic")
     async def test_chat_skips_thinking_blocks(self, mock_anthropic):
         mock_client = Mock()

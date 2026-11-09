@@ -5,6 +5,7 @@ Schema (data/settings.json):
     {
       "active_provider": "kimi",
       "temperature": 0.7,
+      "effort": "auto",
       "providers": {
         "claude":     { "model": "...", "api_key": "..." },
         "openai":     { "model": "...", "api_key": "..." },

@@ -10,6 +10,25 @@ from .base import BaseLLMClient
 from .provider_registry import PROVIDERS, get_model_config
 
 
+def configured_model(settings: Settings, provider: str) -> str:
+    """Return the model ID configured for a provider."""
+    return {
+        "claude":     settings.claude_model,
+        "openai":     settings.openai_model,
+        "openrouter": settings.openrouter_model,
+        "ollama":     settings.ollama_model,
+        "lmstudio":   settings.lmstudio_model,
+        "kimi":       settings.kimi_model,
+        "bedrock":    settings.bedrock_model_id,
+    }[provider]
+
+
+def _requested_effort(settings: Settings, provider: str, model: str) -> Optional[str]:
+    """Return the effort to send, or None for "auto" and levels the model lacks."""
+    levels = get_model_config(model, provider).effort_levels
+    return settings.effort if settings.effort in levels else None
+
+
 class LLMFactory:
     """Creates LLM client instances from settings + provider registry."""
 
@@ -59,6 +78,7 @@ class LLMFactory:
             api_key=settings.anthropic_api_key,
             model=settings.claude_model,
             temperature=settings.temperature,
+            effort=_requested_effort(settings, "claude", settings.claude_model),
         )
 
     @staticmethod
@@ -68,14 +88,7 @@ class LLMFactory:
     ) -> BaseLLMClient:
         prov_cfg = PROVIDERS[provider]
 
-        # Resolve model and api_key from per-provider settings fields.
-        model_map: dict[str, str] = {
-            "openai":     settings.openai_model,
-            "openrouter": settings.openrouter_model,
-            "ollama":     settings.ollama_model,
-            "lmstudio":   settings.lmstudio_model,
-            "kimi":       settings.kimi_model,
-        }
+        # Resolve api_key from per-provider settings fields.
         key_map: dict[str, str] = {
             "openai":     settings.openai_api_key,
             "openrouter": settings.openrouter_api_key or settings.openai_api_key,
@@ -88,7 +101,7 @@ class LLMFactory:
             "lmstudio": settings.lmstudio_base_url,
         }
 
-        model = model_map.get(provider, "")
+        model = configured_model(settings, provider)
         api_key = key_map.get(provider, "")
         base_url_override = base_url_override_map.get(provider, "")
 
@@ -114,7 +127,7 @@ class LLMFactory:
                 "openai package is required. Install with: pip install openai"
             )
 
-        model_cfg = get_model_config(model)
+        model_cfg = get_model_config(model, provider)
         return OpenAIClient(
             api_key=api_key,
             model=model,
@@ -124,6 +137,7 @@ class LLMFactory:
             max_tokens_param=model_cfg.max_tokens_param,
             temperature_supported=model_cfg.temperature_supported,
             fixed_temperature=model_cfg.fixed_temperature,
+            effort=_requested_effort(settings, provider, model),
         )
 
     @staticmethod
@@ -145,6 +159,7 @@ class LLMFactory:
             aws_secret_access_key=settings.aws_secret_access_key,
             region=settings.aws_region,
             temperature=settings.temperature,
+            effort=_requested_effort(settings, "bedrock", settings.bedrock_model_id),
         )
 
 

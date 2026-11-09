@@ -163,3 +163,42 @@ class TestSettingsAPI:
         assert get_resp.status_code == 200
         assert get_resp.json()["active_provider"] == "kimi"
         assert get_resp.json()["providers"]["kimi"]["model"] == "kimi-k2.6"
+
+
+@pytest.mark.api
+class TestGenerationParamsAPI:
+    @pytest.mark.parametrize(
+        "provider, model, temperature, effort",
+        [
+            ("claude", "claude-haiku-5-5", False, ["low", "medium", "high", "xhigh", "max"]),
+            ("claude", "claude-haiku-4-5-20251001", False, []),
+            ("ollama", "gemma3:4b", True, []),
+            ("kimi", "kimi-k2.6", False, []),
+        ],
+    )
+    def test_reports_params_for_model(self, client, provider, model, temperature, effort):
+        resp = client.get(
+            "/api/settings/generation-params", params={"provider": provider, "model": model}
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["temperature_supported"] is temperature
+        assert body["effort_levels"] == effort
+
+    def test_empty_model_uses_configured_model(self, client):
+        resp = client.get("/api/settings/generation-params", params={"provider": "ollama"})
+        assert resp.status_code == 200
+        assert resp.json()["model"]
+
+    def test_rejects_unknown_provider(self, client):
+        resp = client.get("/api/settings/generation-params", params={"provider": "nope"})
+        assert resp.status_code == 422
+
+    def test_put_saves_effort(self, client):
+        resp = client.put("/api/settings/", json={"effort": "high"})
+        assert resp.status_code == 200
+        assert resp.json()["effort"] == "high"
+        assert client.get("/api/settings/").json()["effort"] == "high"
+
+    def test_put_rejects_invalid_effort(self, client):
+        assert client.put("/api/settings/", json={"effort": "extreme"}).status_code == 422

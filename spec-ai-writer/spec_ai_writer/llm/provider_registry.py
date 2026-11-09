@@ -1,13 +1,14 @@
 """Registry of LLM provider and model-specific configurations.
 
 Adding a new provider: add an entry to PROVIDERS.
-Adding a new model with non-standard params: add an entry to MODELS.
+Adding a new model family with non-standard params: add an entry to MODELS.
 No other files need to change.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import re
+from dataclasses import dataclass, field, replace
 from typing import Optional
 
 
@@ -25,6 +26,7 @@ class ModelConfig:
     max_tokens_param: str = "max_tokens"
     temperature_supported: bool = True
     fixed_temperature: Optional[float] = None  # overrides user setting when set
+    effort_levels: tuple[str, ...] = ()  # empty when effort cannot be set
 
 
 PROVIDERS: dict[str, ProviderConfig] = {
@@ -65,46 +67,66 @@ PROVIDERS: dict[str, ProviderConfig] = {
     ),
 }
 
-# Model-specific parameter overrides.
-# Keys are exact model IDs; use prefix matching for families (e.g. "o1-").
+_CLAUDE_MODEL_RE = re.compile(r"claude-([a-z]+)-(\d+)(?:-(\d{1,2}))?(?=$|[-:@])")
+
+_OPENAI_REASONING = ModelConfig(
+    max_tokens_param="max_completion_tokens",
+    temperature_supported=False,
+    effort_levels=("low", "medium", "high"),
+)
+_OPENAI_REASONING_FIXED_EFFORT = ModelConfig(
+    max_tokens_param="max_completion_tokens", temperature_supported=False
+)
+
+# Model-specific parameter overrides, matched by model family: a key matches the
+# same ID or any ID that continues it after "-", "." or ":" (the longest key wins).
 MODELS: dict[str, ModelConfig] = {
-    "gpt-5.5": ModelConfig(
-        max_tokens_param="max_completion_tokens", temperature_supported=False
-    ),
-    "gpt-5.5-pro": ModelConfig(
-        max_tokens_param="max_completion_tokens", temperature_supported=False
-    ),
-    "gpt-5.4": ModelConfig(
-        max_tokens_param="max_completion_tokens", temperature_supported=False
-    ),
-    "gpt-5.4-pro": ModelConfig(
-        max_tokens_param="max_completion_tokens", temperature_supported=False
-    ),
-    "gpt-5-mini": ModelConfig(
-        max_tokens_param="max_completion_tokens", temperature_supported=False
-    ),
-    "gpt-5-nano": ModelConfig(
-        max_tokens_param="max_completion_tokens", temperature_supported=False
-    ),
-    "o1": ModelConfig(
-        max_tokens_param="max_completion_tokens", temperature_supported=False
-    ),
-    "o1-mini": ModelConfig(
-        max_tokens_param="max_completion_tokens", temperature_supported=False
-    ),
-    "o3": ModelConfig(
-        max_tokens_param="max_completion_tokens", temperature_supported=False
-    ),
-    "o3-mini": ModelConfig(
-        max_tokens_param="max_completion_tokens", temperature_supported=False
-    ),
-    "o4-mini": ModelConfig(
-        max_tokens_param="max_completion_tokens", temperature_supported=False
-    ),
+    "gpt-5": _OPENAI_REASONING,
+    "gpt-5-pro": _OPENAI_REASONING_FIXED_EFFORT,
+    "gpt-5.4-pro": _OPENAI_REASONING_FIXED_EFFORT,
+    "gpt-5.5-pro": _OPENAI_REASONING_FIXED_EFFORT,
+    "o1": _OPENAI_REASONING,
+    "o1-mini": _OPENAI_REASONING_FIXED_EFFORT,
+    "o3": _OPENAI_REASONING,
+    "o4": _OPENAI_REASONING,
     "kimi-k2.6": ModelConfig(fixed_temperature=0.6),
 }
 
 
-def get_model_config(model: str) -> ModelConfig:
-    """Return ModelConfig for a given model ID, falling back to defaults."""
-    return MODELS.get(model, ModelConfig())
+def _claude_effort_levels(model: str) -> tuple[str, ...]:
+    """Return the effort levels a Claude model accepts (empty when it has none)."""
+    match = _CLAUDE_MODEL_RE.search(model)
+    if not match:
+        return ()
+    family = match.group(1)
+    version = (int(match.group(2)), int(match.group(3) or 0))
+    if version >= (4, 7):
+        return ("low", "medium", "high", "xhigh", "max")
+    if version == (4, 6) and family in ("opus", "sonnet"):
+        return ("low", "medium", "high", "max")
+    if version == (4, 5) and family == "opus":
+        return ("low", "medium", "high")
+    return ()
+
+
+def _find_model_family(model: str) -> Optional[ModelConfig]:
+    # OpenRouter prefixes IDs with the vendor, e.g. "openai/gpt-5.5"
+    name = model.rsplit("/", 1)[-1]
+    for key in sorted(MODELS, key=len, reverse=True):
+        if name == key or (name.startswith(key) and name[len(key)] in "-.:"):
+            return MODELS[key]
+    return None
+
+
+def get_model_config(model: str, provider: Optional[str] = None) -> ModelConfig:
+    """Return the parameters a model accepts on a provider, falling back to defaults."""
+    client_type = PROVIDERS[provider].client_type if provider in PROVIDERS else None
+    if client_type in ("claude", "bedrock"):
+        # Sampling parameters are never sent to Claude (see ClaudeClient.chat)
+        return ModelConfig(temperature_supported=False, effort_levels=_claude_effort_levels(model))
+
+    config = _find_model_family(model) or ModelConfig()
+    if provider != "openai":
+        # reasoning_effort is only known to work on the OpenAI API itself
+        config = replace(config, effort_levels=())
+    return config

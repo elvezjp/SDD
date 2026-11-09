@@ -19,6 +19,8 @@ import type {
   SpecificationListResponse,
   SettingsResponse,
   SettingsUpdateRequest,
+  GenerationParamsResponse,
+  LLMProvider,
 } from '@/types';
 import { mockApiClient } from './mockClient';
 
@@ -150,6 +152,17 @@ class APIClient {
   // Settings API
   async getSettings(): Promise<SettingsResponse> {
     const response = await this.client.get<SettingsResponse>('/api/settings/');
+    return response.data;
+  }
+
+  async getGenerationParams(
+    provider: LLMProvider,
+    model: string,
+  ): Promise<GenerationParamsResponse> {
+    const response = await this.client.get<GenerationParamsResponse>(
+      '/api/settings/generation-params',
+      { params: { provider, model } },
+    );
     return response.data;
   }
 
