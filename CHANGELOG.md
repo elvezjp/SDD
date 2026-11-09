@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.6] - 2026-11-09
+
 ### Added
 
 - **spec-ai-writer / Interview input improvements**: The text area now supports multiple lines — `Shift+Enter` inserts a newline and `Enter` submits, making it easier to write longer answers (Issue #84 T1–T3).
@@ -142,6 +146,7 @@ Initial release. Published as the practice repository for *Spec-Driven Developme
 
 | Version | Key Features |
 |---------|-------------|
+| 1.0.6   | Claude 4.7+ and Claude 5 model support, LLM failures shown in the interview UI, interview input improvements, security dependency updates (certifi, GitPython, axios, and others) |
 | 1.0.5   | Security dependency updates (idna 3.15); tag operation rules added to CONTRIBUTING |
 | 1.0.4   | `--log-level` CLI option, interview resume fix (Issue #48, #67) |
 | 1.0.3   | OpenRouter & Local LLM support, Web UI settings, version alignment (Issue #59, #60) |
