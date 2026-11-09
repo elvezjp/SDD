@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from spec_ai_writer.config.settings import get_settings
 from spec_ai_writer.core.context_manager import ContextManager
+from spec_ai_writer.core.phase_manager import PhaseManager
 from spec_ai_writer.llm.base import BaseLLMClient
 from spec_ai_writer.llm.exceptions import (
     LLMAuthenticationError,
@@ -122,3 +123,30 @@ class TestAnswerLLMErrorStatus:
         llm.generate_question.side_effect = error
 
         assert _answer(test_client, project_id).status_code == status_code
+
+
+@pytest.mark.api
+class TestAnswerPhaseCompletion:
+    def test_completing_a_phase_returns_the_next_question(
+        self, test_client, llm, project_id, monkeypatch
+    ):
+        """Regression test for Issue #109: phase completion was reported as a disconnect."""
+        monkeypatch.setattr(get_settings(), "auto_git_commit", False)
+        llm.generate_question.return_value = "次の質問です"
+        llm.extract_structured_data.return_value = {
+            field: ["value"] for field in PhaseManager().get_required_fields(1)
+        }
+
+        assert _answer(test_client, project_id).status_code == 200
+        for number in range(1, 3):
+            assert _answer(test_client, project_id, f"回答{number}").status_code == 200
+        response = _answer(test_client, project_id, "回答3")
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["phase_complete"] is True
+        assert body["phase_num"] == 1
+        assert body["question"] == "次の質問です"
+        context = _load(project_id)
+        assert context.is_phase_complete(1)
+        assert context.get_pending_question(2) == "次の質問です"

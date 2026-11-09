@@ -448,12 +448,16 @@ class InterviewEngine:
     async def _generate_and_save_spec(
         self,
         phase_num: int
-    ) -> None:
+    ) -> bool:
         """
         Generate and save the specification document for a phase.
 
         Args:
             phase_num: Phase number
+
+        Returns:
+            True when finished. The web router treats None as a client
+            disconnect, so this method must not return None.
         """
         # Extract structured data first
         await self._extract_and_save_structured_data(phase_num)
@@ -490,6 +494,8 @@ class InterviewEngine:
                     phase_num,
                     phase_info.name
                 )
+
+        return True
 
     def _get_phase_dependencies(self, phase_num: int) -> List[int]:
         """
