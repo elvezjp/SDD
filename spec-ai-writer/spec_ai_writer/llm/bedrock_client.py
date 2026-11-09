@@ -34,21 +34,21 @@ class BedrockClient(BaseLLMClient):
 
     def __init__(
         self,
-        model: str = "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+        model: str = "global.anthropic.claude-haiku-5-5",
         region: str = "us-west-2",
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         api_key: Optional[str] = None,
         temperature: float = 0.7,
-        max_tokens: int = 4096,
-        timeout: float = 30.0,
+        max_tokens: int = 16000,
+        timeout: float = 120.0,
         effort: Optional[str] = None
     ):
         """
         Initialize Bedrock client.
 
         Args:
-            model: Bedrock model ID (e.g., "global.anthropic.claude-haiku-4-5-20251001-v1:0")
+            model: Bedrock model ID (e.g., "global.anthropic.claude-haiku-5-5")
             region: AWS region (e.g., "us-west-2", "us-east-1")
             aws_access_key_id: AWS access key (optional, can use IAM role)
             aws_secret_access_key: AWS secret key (optional, can use IAM role)

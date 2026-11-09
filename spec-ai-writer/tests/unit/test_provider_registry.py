@@ -45,6 +45,13 @@ class TestOpenAICompatibleParams:
         assert config.max_tokens_param == "max_completion_tokens"
         assert config.effort_levels == BASIC
 
+    @pytest.mark.parametrize("model", ["gpt-6-luna", "gpt-6.1-sol", "gpt-6-astra"])
+    def test_gpt6_family(self, model):
+        config = get_model_config(model, "openai")
+        assert config.temperature_supported is False
+        assert config.max_tokens_param == "max_completion_tokens"
+        assert config.effort_levels == CLAUDE_ALL
+
     @pytest.mark.parametrize("model", ["gpt-5.5-pro", "o1-mini"])
     def test_models_without_selectable_effort(self, model):
         config = get_model_config(model, "openai")
@@ -56,14 +63,32 @@ class TestOpenAICompatibleParams:
         assert config.temperature_supported is False
         assert config.effort_levels == ()
 
-    @pytest.mark.parametrize("model", ["gpt-4.1", "o1x-experimental", "gemma3:4b"])
-    def test_other_models_use_defaults(self, model):
+    @pytest.mark.parametrize("model", ["gpt-3.5-turbo", "gpt-4.1", "gpt-4o", "gpt-4o-mini"])
+    def test_models_listed_as_accepting_temperature(self, model):
         config = get_model_config(model, "openai")
         assert config.temperature_supported is True
         assert config.effort_levels == ()
 
+    @pytest.mark.parametrize(
+        "provider, model",
+        [
+            ("openai", "o1x-experimental"),
+            ("openai", "future-model"),
+            ("openrouter", "vendor/unknown-model"),
+            ("kimi", "kimi-k3"),
+        ],
+    )
+    def test_unknown_models_receive_no_temperature(self, provider, model):
+        assert get_model_config(model, provider).temperature_supported is False
+
+    @pytest.mark.parametrize("provider", ["ollama", "lmstudio"])
+    def test_local_servers_accept_temperature(self, provider):
+        assert get_model_config("gemma4", provider).temperature_supported is True
+
     def test_fixed_temperature_model(self):
-        assert get_model_config("kimi-k2.6", "kimi").fixed_temperature == 0.6
+        config = get_model_config("kimi-k2.6", "kimi")
+        assert config.temperature_supported is True
+        assert config.fixed_temperature == 0.6
 
 
 @pytest.mark.unit

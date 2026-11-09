@@ -18,6 +18,7 @@
 
 ### 変更
 
+- **spec-ai-writer / デフォルトモデルの更新**: 各プロバイダのデフォルトモデルを最新化しました（Claude は Haiku 5.5）。保存済みの設定には影響しません。Temperature は、対応しているモデルにだけ送ります（Issue #101）。
 - **spec-ai-writer / LLM クライアントの SDK を更新**: `anthropic` を 2.x、`openai` を 3.x に更新しました。Claude には API バージョン `2026-10-21` で接続し、API キーは `Authorization` ヘッダーで送ります（Issue #112）。
 
 ### 修正

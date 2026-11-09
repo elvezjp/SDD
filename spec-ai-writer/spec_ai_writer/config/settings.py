@@ -32,7 +32,7 @@ class Settings(BaseSettings):
         default="", description="Anthropic API key (ANTHROPIC_API_KEY)"
     )
     claude_model: str = Field(
-        default="claude-haiku-4-5-20251001",
+        default="claude-haiku-5-5",
         description="Claude model ID (CLAUDE_MODEL)",
     )
 
@@ -41,7 +41,7 @@ class Settings(BaseSettings):
         default="", description="OpenAI API key (OPENAI_API_KEY)"
     )
     openai_model: str = Field(
-        default="gpt-5-mini", description="OpenAI model ID (OPENAI_MODEL)"
+        default="gpt-6-luna", description="OpenAI model ID (OPENAI_MODEL)"
     )
 
     # --- OpenRouter ---
@@ -50,13 +50,13 @@ class Settings(BaseSettings):
         description="OpenRouter API key (OPENROUTER_API_KEY). Falls back to OPENAI_API_KEY.",
     )
     openrouter_model: str = Field(
-        default="nvidia/nemotron-3-ultra-550b-a55b:free",
+        default="nvidia/nemotron-3.5-lightning:free",
         description="OpenRouter model ID (OPENROUTER_MODEL). Falls back to OPENAI_MODEL.",
     )
 
     # --- Ollama ---
     ollama_model: str = Field(
-        default="gemma3:4b", description="Ollama model ID (OLLAMA_MODEL)"
+        default="gemma4", description="Ollama model ID (OLLAMA_MODEL)"
     )
     ollama_base_url: str = Field(
         default="http://localhost:11434/v1",
@@ -65,7 +65,7 @@ class Settings(BaseSettings):
 
     # --- LM Studio ---
     lmstudio_model: str = Field(
-        default="google/gemma-3-4b", description="LM Studio model ID (LMSTUDIO_MODEL)"
+        default="google/gemma-4", description="LM Studio model ID (LMSTUDIO_MODEL)"
     )
     lmstudio_base_url: str = Field(
         default="http://localhost:1234/v1",
@@ -77,7 +77,7 @@ class Settings(BaseSettings):
         default="", description="Moonshot Kimi API key (KIMI_API_KEY)"
     )
     kimi_model: str = Field(
-        default="kimi-k2.6", description="Kimi model ID (KIMI_MODEL)"
+        default="kimi-k3", description="Kimi model ID (KIMI_MODEL)"
     )
 
     # --- AWS Bedrock ---
@@ -88,7 +88,7 @@ class Settings(BaseSettings):
     aws_secret_access_key: str = Field(default="", description="AWS Secret Access Key")
     aws_region: str = Field(default="ap-northeast-1", description="AWS region")
     bedrock_model_id: str = Field(
-        default="global.anthropic.claude-haiku-4-5-20251001-v1:0",
+        default="global.anthropic.claude-haiku-5-5",
         description="Bedrock model ID",
     )
 

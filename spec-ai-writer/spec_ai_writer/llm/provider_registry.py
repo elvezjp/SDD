@@ -19,12 +19,13 @@ class ProviderConfig:
     base_url: Optional[str] = None
     api_key_required: bool = True
     extra_body: dict = field(default_factory=dict)
+    temperature_supported: bool = False  # True when every model of the provider accepts it
 
 
 @dataclass
 class ModelConfig:
     max_tokens_param: str = "max_tokens"
-    temperature_supported: bool = True
+    temperature_supported: bool = False  # not sent unless a model is known to accept it
     fixed_temperature: Optional[float] = None  # overrides user setting when set
     effort_levels: tuple[str, ...] = ()  # empty when effort cannot be set
 
@@ -48,12 +49,14 @@ PROVIDERS: dict[str, ProviderConfig] = {
         display_name="Ollama (ローカル)",
         base_url="http://localhost:11434/v1",
         api_key_required=False,
+        temperature_supported=True,
     ),
     "lmstudio": ProviderConfig(
         client_type="openai_compatible",
         display_name="LM Studio (ローカル)",
         base_url="http://localhost:1234/v1",
         api_key_required=False,
+        temperature_supported=True,
     ),
     "kimi": ProviderConfig(
         client_type="openai_compatible",
@@ -71,25 +74,31 @@ _CLAUDE_MODEL_RE = re.compile(r"claude-([a-z]+)-(\d+)(?:-(\d{1,2}))?(?=$|[-:@])"
 
 _OPENAI_REASONING = ModelConfig(
     max_tokens_param="max_completion_tokens",
-    temperature_supported=False,
     effort_levels=("low", "medium", "high"),
 )
-_OPENAI_REASONING_FIXED_EFFORT = ModelConfig(
-    max_tokens_param="max_completion_tokens", temperature_supported=False
+_OPENAI_GPT6 = ModelConfig(
+    max_tokens_param="max_completion_tokens",
+    effort_levels=("low", "medium", "high", "xhigh", "max"),
 )
+_OPENAI_REASONING_FIXED_EFFORT = ModelConfig(max_tokens_param="max_completion_tokens")
+_ACCEPTS_TEMPERATURE = ModelConfig(temperature_supported=True)
 
 # Model-specific parameter overrides, matched by model family: a key matches the
 # same ID or any ID that continues it after "-", "." or ":" (the longest key wins).
 MODELS: dict[str, ModelConfig] = {
+    "gpt-3.5": _ACCEPTS_TEMPERATURE,
+    "gpt-4": _ACCEPTS_TEMPERATURE,
+    "gpt-4o": _ACCEPTS_TEMPERATURE,
     "gpt-5": _OPENAI_REASONING,
     "gpt-5-pro": _OPENAI_REASONING_FIXED_EFFORT,
     "gpt-5.4-pro": _OPENAI_REASONING_FIXED_EFFORT,
     "gpt-5.5-pro": _OPENAI_REASONING_FIXED_EFFORT,
+    "gpt-6": _OPENAI_GPT6,
     "o1": _OPENAI_REASONING,
     "o1-mini": _OPENAI_REASONING_FIXED_EFFORT,
     "o3": _OPENAI_REASONING,
     "o4": _OPENAI_REASONING,
-    "kimi-k2.6": ModelConfig(fixed_temperature=0.6),
+    "kimi-k2.6": ModelConfig(temperature_supported=True, fixed_temperature=0.6),
 }
 
 
@@ -123,9 +132,11 @@ def get_model_config(model: str, provider: Optional[str] = None) -> ModelConfig:
     client_type = PROVIDERS[provider].client_type if provider in PROVIDERS else None
     if client_type in ("claude", "bedrock"):
         # Sampling parameters are never sent to Claude (see ClaudeClient.chat)
-        return ModelConfig(temperature_supported=False, effort_levels=_claude_effort_levels(model))
+        return ModelConfig(effort_levels=_claude_effort_levels(model))
 
     config = _find_model_family(model) or ModelConfig()
+    if provider in PROVIDERS and PROVIDERS[provider].temperature_supported:
+        config = replace(config, temperature_supported=True)
     if provider != "openai":
         # reasoning_effort is only known to work on the OpenAI API itself
         config = replace(config, effort_levels=())

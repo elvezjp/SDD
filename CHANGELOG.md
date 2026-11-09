@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **spec-ai-writer / Updated default models**: Updated each provider's default model (Claude now defaults to Haiku 5.5). Saved settings are unaffected. Temperature is now sent only to models known to accept it (Issue #101).
 - **spec-ai-writer / Updated LLM client SDKs**: Updated `anthropic` to 2.x and `openai` to 3.x. Claude requests now use API version `2026-10-21` and send the API key in the `Authorization` header (Issue #112).
 
 ### Fixed
