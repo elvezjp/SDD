@@ -15,6 +15,10 @@
 
 - **spec-ai-writer / LLM クライアントの SDK を更新**: `anthropic` を 2.x、`openai` を 3.x に更新しました。Claude には API バージョン `2026-10-21` で接続し、API キーは `Authorization` ヘッダーで送ります（Issue #112）。
 
+### 修正
+
+- **spec-ai-writer / 拒否・打ち切り・空の応答をエラーにする**: Claude と AWS Bedrock で、モデルが応答を拒否したとき、出力の上限で打ち切られたとき、応答が空のときに、それぞれ原因の分かるエラーにしました（Issue #100）。
+
 ---
 
 ## [1.0.6] - 2026-11-09

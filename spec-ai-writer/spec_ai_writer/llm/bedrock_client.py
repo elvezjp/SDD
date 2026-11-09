@@ -161,23 +161,6 @@ class BedrockClient(BaseLLMClient):
                 # Parse response (body is an async stream in aiobotocore)
                 response_body = json.loads(await response["body"].read())
 
-            # Extract text from response
-            # Bedrock Claude API returns content as a list of content blocks
-            content_blocks = response_body.get("content", [])
-            if not content_blocks:
-                logger.warning("Empty response from Bedrock API")
-                return ""
-
-            # Concatenate all text blocks
-            text_content = []
-            for block in content_blocks:
-                if block.get("type") == "text":
-                    text_content.append(block.get("text", ""))
-
-            result = "".join(text_content)
-            logger.debug(f"Bedrock response received: {len(result)} characters")
-            return result
-
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "Unknown")
             error_message = e.response.get("Error", {}).get("Message", str(e))
@@ -197,3 +180,15 @@ class BedrockClient(BaseLLMClient):
         except Exception as e:
             logger.error(f"Unexpected error during Bedrock API call: {e}")
             raise LLMResponseError(f"Bedrock API call failed: {e}") from e
+
+        # Bedrock Claude API returns content as a list of content blocks
+        text = "".join(
+            block.get("text", "")
+            for block in response_body.get("content", [])
+            if block.get("type") == "text"
+        )
+        logger.debug(f"Bedrock response received: {len(text)} characters")
+        stop_details = response_body.get("stop_details") or {}
+        return self._require_response_text(
+            "Bedrock", text, response_body.get("stop_reason"), stop_details.get("category")
+        )

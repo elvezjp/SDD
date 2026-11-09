@@ -49,6 +49,42 @@ class BaseLLMClient(ABC):
         self.temperature = temperature
         self.timeout = timeout
 
+    def _require_response_text(
+        self,
+        provider: str,
+        text: str,
+        stop_reason: Optional[str],
+        refusal_category: Optional[str] = None,
+    ) -> str:
+        """
+        Return the response text, or raise when the response is not usable.
+
+        Args:
+            provider: Provider name used in the error message
+            text: Text extracted from the response
+            stop_reason: Why the model stopped generating
+            refusal_category: Refusal category, when the provider reports one
+
+        Returns:
+            The response text
+
+        Raises:
+            LLMResponseError: If the model refused, was cut off, or returned no text
+        """
+        if stop_reason == "refusal":
+            category = f"（カテゴリ: {refusal_category}）" if refusal_category else ""
+            logger.warning("%s refused the request: category=%s", provider, refusal_category)
+            raise LLMResponseError(f"{provider} がリクエストへの応答を拒否しました{category}。")
+        if stop_reason == "max_tokens":
+            logger.warning("%s response reached max_tokens: %d characters", provider, len(text))
+            raise LLMResponseError(
+                f"{provider} の応答が出力の上限（max_tokens）に達し、途中で打ち切られました。"
+            )
+        if not text.strip():
+            logger.warning("%s returned no text: stop_reason=%s", provider, stop_reason)
+            raise LLMResponseError(f"{provider} の応答が空でした（stop_reason: {stop_reason}）。")
+        return text
+
     @abstractmethod
     async def chat(
         self,

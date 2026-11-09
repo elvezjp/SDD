@@ -13,10 +13,10 @@ from spec_ai_writer.llm.exceptions import (
 )
 
 
-def _mock_session(mock_get_session, content):
+def _mock_session(mock_get_session, content, **fields):
     """Make the aiobotocore session return a client responding with content blocks."""
     body = MagicMock()
-    body.read = AsyncMock(return_value=json.dumps({"content": content}).encode())
+    body.read = AsyncMock(return_value=json.dumps({"content": content, **fields}).encode())
 
     client = MagicMock()
     client.invoke_model = AsyncMock(return_value={"body": body})
@@ -111,6 +111,24 @@ class TestBedrockClient:
         client.invoke_model.side_effect = error
 
         with pytest.raises(expected):
+            await BedrockClient().chat([{"role": "user", "content": "hi"}])
+
+    @pytest.mark.parametrize(
+        "content, fields, message",
+        [
+            ([], {"stop_reason": "refusal", "stop_details": {"category": "cyber"}}, "拒否しました（カテゴリ: cyber）"),
+            ([], {"stop_reason": "refusal"}, "拒否しました"),
+            ([{"type": "text", "text": "途中まで"}], {"stop_reason": "max_tokens"}, "max_tokens"),
+            ([{"type": "thinking", "thinking": ""}], {"stop_reason": "max_tokens"}, "max_tokens"),
+            ([], {"stop_reason": "end_turn"}, "応答が空でした"),
+            ([{"type": "thinking", "thinking": ""}], {"stop_reason": "end_turn"}, "応答が空でした"),
+        ],
+    )
+    @patch("spec_ai_writer.llm.bedrock_client.aiobotocore.session.get_session")
+    async def test_chat_rejects_unusable_responses(self, mock_get_session, content, fields, message):
+        _mock_session(mock_get_session, content, **fields)
+
+        with pytest.raises(LLMResponseError, match=message):
             await BedrockClient().chat([{"role": "user", "content": "hi"}])
 
 
