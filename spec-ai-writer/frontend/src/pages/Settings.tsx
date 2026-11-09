@@ -495,12 +495,10 @@ function SettingsForm({ initialData }: { initialData: SettingsResponse }) {
               }}
               className="w-full disabled:opacity-50 disabled:cursor-not-allowed"
             />
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {PROVIDER_META[activeProvider].appliesTemperature
-                ? "一部のモデル（GPT-5 系、o 系、Kimi K2.6 など）には適用されません。"
-                : "Claude のモデルには Temperature を送信しないため、この設定は適用されません。"}
-            </p>
           </div>
+          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+            生成パラメータは、対応していないモデルには送信されません。
+          </p>
         </div>
 
         {/* Save */}
