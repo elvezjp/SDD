@@ -15,6 +15,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Stars](https://img.shields.io/github/stars/elvezjp/SDD?style=social)](https://github.com/elvezjp/SDD/stargazers)
 
+私の現場で、まずREADMEを育ててみます。
+
 This repository is the **practice repository** used in *Spec-Driven Development: A Practical Introduction*.
 In the book, it is referred to as the "practice repository" or "SDD repository."
 
