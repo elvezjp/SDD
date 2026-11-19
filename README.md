@@ -1,5 +1,16 @@
 テストテストテスト
 
+さらに更新する
+
+更新更新
+
+
+
+追加で更新
+
+
+
+
 
 > [!NOTE]
 > **日本語版をお探しの方へ**
@@ -24,7 +35,7 @@ In the book, it is referred to as the "practice repository" or "SDD repository."
 The name "SDD" stands for **Spec-Driven Development**. This remote repository contains sample files organized around the "4 Principles and 7 Processes of Spec-Driven Development" described in the book, and serves as **a reference for how to structure a repository in real projects**.
 
 > For readers of the book: Please check the [Errata](./docs/guides/errata.md) for any known corrections.
->
+> 
 > This repository also makes public the discussions that are central to Spec-Driven Development. To see how we responded to an external API update, follow the investigation, decisions, and fixes starting from [#98](https://github.com/elvezjp/SDD/issues/98).
 
 ## Purpose of This Repository
@@ -52,6 +63,7 @@ This repository lets you practice writing specifications with Cursor while readi
 GitHub has two similar but distinct operations: **Fork** and **Clone**. It is important to use each one for the right purpose.
 
 ### What is a Fork?
+
 - Copies this repository **under your own GitHub account**
 - Since it becomes your own repository, you can:
   - Edit it freely
@@ -59,19 +71,20 @@ GitHub has two similar but distinct operations: **Fork** and **Clone**. It is im
   - Work without affecting the original repository
 
 ### What is a Clone?
+
 - Copies a GitHub repository **to your local machine (PC)**
 - Cloning alone does not create your own repository on GitHub
 
 ### Fork vs Clone Comparison
 
-| Item | Fork (operation on GitHub) | Direct Clone (saves to local repository) |
-|------|---------------------------|------------------------------------------|
-| Creates your own repository on GitHub | ✅ | ❌ |
-| Allows free editing and pushing of README.md | ✅ | ❌ |
-| Failures don't affect the original repository | ✅ | ✅ |
-| Can submit Pull Requests | ✅ | ❌ |
-| For reference/viewing only | △ | ✅ |
-| Recommended use in this repository | **Editing & Practice** | **Viewing Only** |
+| Item                                          | Fork (operation on GitHub) | Direct Clone (saves to local repository) |
+| --------------------------------------------- | -------------------------- | ---------------------------------------- |
+| Creates your own repository on GitHub         | ✅                          | ❌                                        |
+| Allows free editing and pushing of README.md  | ✅                          | ❌                                        |
+| Failures don't affect the original repository | ✅                          | ✅                                        |
+| Can submit Pull Requests                      | ✅                          | ❌                                        |
+| For reference/viewing only                    | △                          | ✅                                        |
+| Recommended use in this repository            | **Editing & Practice**     | **Viewing Only**                         |
 
 ## Usage
 
@@ -92,11 +105,15 @@ In that case, use the **Command Palette** approach.
 **For Reference Only (Direct Clone)**
 
 1. From the Cursor menu, select "File" > "Clone Repository"
+
 2. Enter the following URL:
+   
    ```
    https://github.com/elvezjp/SDD.git
    ```
+
 3. Select a destination folder
+
 4. Click "Clone"
 
 ### 2. Open and Review README.md
@@ -216,6 +233,7 @@ For setup instructions and usage details, see [spec-ai-writer/README.md](spec-ai
 A: **This remote repository (elvezjp/SDD) is for reference only, and you do not have permission to edit it directly.** If you want to try editing, fork it first and then clone your forked repository to work locally.
 
 **Fork steps**:
+
 1. Open this remote repository on GitHub
 2. Click the "Fork" button in the upper right
 3. Clone your forked remote repository locally and work from there
